@@ -1,71 +1,103 @@
-# marktree README
+# MarkTree
 
-This is the README for your extension "marktree". After writing up a brief description, we recommend including the following sections.
+![Copy MD Tree](images/logo.png)
+
+MarkTree helps you quickly copy directory structures and file contents as Markdown. With a single click, generate a neatly formatted Markdown tree of your project’s folders, files, and code blocks—perfect for LLMs.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Copy MD Tree:** Copies a directory’s structure as a Markdown-formatted list.
+- **Copy MD Files:** Copies the contents of files into Markdown code blocks.
+- **Copy MD Both:** Copies both the directory tree and file contents in Markdown.
 
-For example if there is an image subfolder under your extension project workspace:
+### Copy MD Tree on my-webapp/
 
-\!\[feature X\]\(images/feature-x.png\)
+![Copy MD Tree](images/copy_md_tree.gif)
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+```sh
+my-webapp/
+├── public
+│   ├── index.html
+│   └── favicon.ico
+├── src
+│   ├── main.js
+│   └── utils.js
+└── styles
+    ├── base.css
+    └── layout.css
+
+3 directories, 6 files
+```
+
+## Copy MD Files on src/
+
+![Copy MD Tree](images/copy_md_files.gif)
+
+src/main.js
+```js
+import { greet } from './utils.js';
+
+console.log(greet('World'));
+```
+
+src/utils.js
+```js
+export function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+```
+
+### Copy MD Both on src/
+
+```sh
+src/
+├── main.js
+└── utils.js
+
+1 directories, 2 files
+```
+
+src/main.js
+
+```js
+import { greet } from './utils.js';
+
+console.log(greet('World'));
+```
+
+src/utils.js
+
+```js
+export function greet(name) {
+  return `Hello, \${name}!`;
+}
+```
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+No special dependencies are required. Just install and start copying Markdown trees and files!
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+MarkTree offers a few settings to customize your experience:
 
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- `marktree.gitignore`: When enabled, respects all workspace `.gitignore`s to skip ignored files when copying.
+- `marktree.showTreeCommand`: Show/hide the “Copy MD Tree” command in the context menu.
+- `marktree.showContentsCommand`: Show/hide the “Copy MD Files” command.
+- `marktree.showBothCommand`: Show/hide the “Copy MD Both” command.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+No known issues at this time. Please report any problems on our GitHub repository.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.1
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+- Initial release: “Copy MD Tree,” “Copy MD Files,” and “Copy MD Tree and Files” commands available.
+- Respects `.gitignore` (configurable).
+- Added settings to show/hide commands.
 
 ---
 
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Enjoy using MarkTree! 🌳**

@@ -2,6 +2,17 @@
   "name": "marktree",
   "displayName": "MarkTree",
   "description": "Copy markdown trees of directories, optionally including contents at the click of a button.",
+  "icon": "icon.png",
+  "keywords": [
+    "markdown",
+    "tree",
+    "contents",
+    "documentation"
+  ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "author": {
     "name": "Fran Aguilera",
     "url": "https://github.com/Falven"
