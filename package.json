@@ -29,36 +29,54 @@
           "type": "boolean",
           "default": true,
           "description": "If enabled, MarkTree will ignore files and directories listed in .gitignore."
+        },
+        "marktree.showTreeCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 'Copy MD Tree' command in the context menu."
+        },
+        "marktree.showContentsCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 'Copy MD Files' command in the context menu."
+        },
+        "marktree.showBothCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 'Copy MD Both' command in the context menu."
         }
       }
     },
     "commands": [
       {
         "command": "extension.copyMdTree",
-        "title": "Copy Markdown Tree"
+        "title": "Copy MD Tree"
       },
       {
         "command": "extension.copyMdContents",
-        "title": "Copy Markdown Contents"
+        "title": "Copy MD Files"
       },
       {
         "command": "extension.copyMdTreeAndContents",
-        "title": "Copy Markdown Tree and Contents"
+        "title": "Copy MD Tree and Files"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "command": "extension.copyMdTree",
-          "group": "navigation"
+          "group": "7_marktree@1",
+          "when": "config.marktree.showTreeCommand"
         },
         {
           "command": "extension.copyMdContents",
-          "group": "navigation"
+          "group": "7_marktree@2",
+          "when": "config.marktree.showContentsCommand"
         },
         {
           "command": "extension.copyMdTreeAndContents",
-          "group": "navigation"
+          "group": "7_marktree@3",
+          "when": "config.marktree.showBothCommand"
         }
       ]
     }
@@ -82,7 +100,6 @@
     "eslint": "^9.13.0",
     "typescript": "^5.6.3"
   },
-  "packageManager": "pnpm@9.14.4+sha512.c8180b3fbe4e4bca02c94234717896b5529740a6cbadf19fa78254270403ea2f27d4e1d46a08a0f56c89b63dc8ebfd3ee53326da720273794e6200fcf0d184ab",
   "dependencies": {
     "ignore": "^6.0.2"
   }
