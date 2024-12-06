@@ -1,38 +1,77 @@
 // Keys are file extensions without the leading '.'.
-// Values are the code block language identifiers commonly used in Markdown code fences.
+// Values are short code block language identifiers commonly used in Markdown code fences.
 export const knownLangs: Record<string, string> = {
+  // JavaScript and derivatives
+  js: 'js',
+  mjs: 'js',
+  cjs: 'js',
+  jsx: 'js',
+
+  // TypeScript and derivatives
+  ts: 'ts',
+  mts: 'ts',
+  cts: 'ts',
+  tsx: 'ts',
+  'd.ts': 'ts',
+
   // Web and scripting
-  js: 'javascript',
-  jsx: 'javascript',
-  ts: 'typescript',
-  tsx: 'typescript',
   vue: 'vue',
-  py: 'python',
+  py: 'py',
   php: 'php',
-  rb: 'ruby',
+  rb: 'rb',
   go: 'go',
-  rs: 'rust',
+  rs: 'rs',
   sh: 'bash',
   bash: 'bash',
   zsh: 'bash',
   ps1: 'powershell',
+  coffee: 'coffee',
+  bat: 'batch',
+  cmd: 'batch',
 
-  // C-family
+  // C-family and related
   c: 'c',
   h: 'c',
   cpp: 'cpp',
+  cc: 'cpp',
   cxx: 'cpp',
   hpp: 'cpp',
-  cs: 'csharp', // C#
+  hh: 'cpp',
+  hxx: 'cpp',
+  cs: 'cs',
   java: 'java',
-  kt: 'kotlin', // Kotlin
+  kt: 'kt',
   swift: 'swift',
   scala: 'scala',
 
+  // Functional and alternative ecosystems
+  hs: 'hs',
+  clj: 'clj',
+  cljs: 'clj',
+  cljc: 'clj',
+  edn: 'clj',
+  fs: 'fs',
+  fsx: 'fs',
+  vb: 'vb',
+  groovy: 'groovy',
+  nim: 'nim',
+  cr: 'cr',
+  r: 'r',
+  lua: 'lua',
+  erl: 'erl',
+  ex: 'elixir',
+  exs: 'elixir',
+  elm: 'elm',
+  dart: 'dart',
+  m: 'matlab',
+  mm: 'objc',
+  ahk: 'ahk',
+
   // Markup and data files
-  md: 'markdown',
-  markdown: 'markdown',
+  md: 'md',
+  markdown: 'md',
   json: 'json',
+  jsonl: 'json',
   yaml: 'yaml',
   yml: 'yaml',
   toml: 'toml',
@@ -51,12 +90,4 @@ export const knownLangs: Record<string, string> = {
   csv: 'csv',
   tsv: 'csv',
   ini: 'ini',
-  env: '', // no specific syntax, plaintext is fine
-  dart: 'dart',
-  r: 'r',
-  lua: 'lua',
-  erl: 'erlang',
-  ex: 'elixir',
-  exs: 'elixir',
-  elm: 'elm',
 };
