@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { shouldIgnore } from './gitignore.js';
+import { knownLangs } from './lang.js';
 
 export const scanDirectory = (
   directory: string
@@ -72,5 +73,5 @@ export const scanDirectory = (
 
 export const guessLanguageByExtension = (filePath: string): string => {
   const ext = path.extname(filePath).toLowerCase().replace('.', '');
-  return '';
+  return knownLangs[ext] || 'plaintext';
 };

@@ -29,7 +29,7 @@ export const registerCopyMdContents = (
         );
 
         try {
-          const results = await runInWorker(files, outputChannel);
+          const results = await runInWorker(files, outputChannel, context);
           let markdown = '';
           for (const r of results) {
             if (r.error) {
@@ -54,7 +54,11 @@ export const registerCopyMdContents = (
         }
       } else {
         try {
-          const results = await runInWorker([uri.fsPath], outputChannel);
+          const results = await runInWorker(
+            [uri.fsPath],
+            outputChannel,
+            context
+          );
           const r = results[0];
           if (r.error) {
             throw new Error(r.error);
@@ -85,10 +89,11 @@ export const registerCopyMdContents = (
 
 const runInWorker = async (
   files: string[],
-  outputChannel: vscode.OutputChannel
+  outputChannel: vscode.OutputChannel,
+  context: vscode.ExtensionContext
 ): Promise<{ file: string; content: string | null; error?: string }[]> => {
   return new Promise((resolve, reject) => {
-    const workerPath = path.join(__dirname, '..', '..', 'worker.js');
+    const workerPath = context.asAbsolutePath('out/worker.js');
 
     const child = spawn(process.execPath, [workerPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
