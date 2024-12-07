@@ -4,9 +4,9 @@ import { initializeIgnore } from './gitignore.js';
 
 let outputChannel: vscode.OutputChannel;
 
-export async function activate(
+export const activate = async (
   context: vscode.ExtensionContext
-): Promise<void> {
+): Promise<void> => {
   outputChannel = vscode.window.createOutputChannel('MarkTree');
 
   const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -49,8 +49,8 @@ export async function activate(
   await registerCommands(context, outputChannel);
 
   outputChannel.appendLine('Extension activated.');
-}
+};
 
-export function deactivate(): void {
+export const deactivate = (): void => {
   outputChannel.appendLine('Extension deactivated.');
-}
+};
