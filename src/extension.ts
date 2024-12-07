@@ -1,40 +1,38 @@
 import * as vscode from 'vscode';
-import { registerCommands } from './commands/index.js';
-import { initializeIgnore } from './gitignore.js';
+import { copyMdContents } from './commands/copy-contents.js';
+import { copyMdTreeAndContents } from './commands/copy-tree-and-contents.js';
+import { copyMdTree } from './commands/copy-tree.js';
 
 let outputChannel: vscode.OutputChannel;
 
-export function activate(context: vscode.ExtensionContext): void {
+export const activate = async (
+  context: vscode.ExtensionContext
+): Promise<void> => {
   outputChannel = vscode.window.createOutputChannel('MarkTree');
   outputChannel.show();
-  outputChannel.appendLine('MarkTree extension activated.');
-
-  const config = vscode.workspace.getConfiguration('marktree');
-  const gitignoreEnabled = config.get<boolean>('gitignore', true);
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-  initializeIgnore(workspaceFolder, gitignoreEnabled);
 
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration(e => {
-      if (e.affectsConfiguration('marktree.gitignore')) {
-        const updatedConfig = vscode.workspace.getConfiguration('marktree');
-        const updatedGitignoreEnabled = updatedConfig.get<boolean>(
-          'gitignore',
-          true
-        );
-        const updatedWorkspaceFolder =
-          vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-        initializeIgnore(updatedWorkspaceFolder, updatedGitignoreEnabled);
-        outputChannel.appendLine(
-          `marktree.gitignore changed to ${updatedGitignoreEnabled}. Re-initialized ignore logic.`
-        );
-      }
-    })
+    vscode.commands.registerCommand(
+      'extension.copyMdTree',
+      copyMdTree(context, outputChannel)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.copyMdContents',
+      copyMdContents(context, outputChannel)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.copyMdTreeAndContents',
+      copyMdTreeAndContents(context, outputChannel)
+    )
   );
 
-  registerCommands(context, outputChannel);
-}
+  outputChannel.appendLine('Extension activated.');
+};
 
-export function deactivate(): void {
-  outputChannel.appendLine('MarkTree extension deactivated.');
-}
+export const deactivate = (): void => {
+  outputChannel.appendLine('Extension deactivated.');
+};

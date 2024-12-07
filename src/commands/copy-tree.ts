@@ -1,48 +1,50 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import * as vscode from 'vscode';
-import { scanDirectory } from '../scanner.js';
+import { runInWorker } from '../utils/run-in-worker.js';
 
-export const registerCopyMdTree = (
-  context: vscode.ExtensionContext,
-  outputChannel: vscode.OutputChannel
-) => {
-  const copyMdTree = vscode.commands.registerCommand(
-    'extension.copyMdTree',
-    async (uri: vscode.Uri) => {
-      if (!uri) {
-        outputChannel.appendLine('No file or folder selected for copyMdTree.');
-        vscode.window.showErrorMessage('No file or folder selected.');
+export const copyMdTree =
+  (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
+  async (uri: vscode.Uri) => {
+    if (!uri) {
+      const message = 'No file or folder selected.';
+      outputChannel.appendLine(message);
+      vscode.window.showErrorMessage(message);
+      return;
+    }
+
+    outputChannel.appendLine(`copyMdTree invoked on: ${uri.fsPath}`);
+
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      const message = 'No workspace folder found.';
+      outputChannel.appendLine(message);
+      vscode.window.showErrorMessage(message);
+      return;
+    }
+
+    try {
+      await runInWorker(
+        {
+          type: 'tree',
+          path: uri.fsPath,
+          workspaceRoot: workspaceFolders[0].uri.fsPath,
+          gitignore: vscode.workspace
+            .getConfiguration('marktree')
+            .get<boolean>('gitignore', true),
+        },
+        context,
+        outputChannel
+      );
+    } catch (err) {
+      if (err instanceof Error) {
+        outputChannel.appendLine(err.message);
+        vscode.window.showErrorMessage(
+          'Error copying the Markdown directory tree. See output for details.'
+        );
         return;
       }
-
-      const stats = fs.statSync(uri.fsPath);
-      outputChannel.appendLine(`copyMdTree invoked on: ${uri.fsPath}`);
-
-      if (stats.isDirectory()) {
-        const { treeLines } = scanDirectory(uri.fsPath);
-        const treeOutput = treeLines.join('\n');
-        const markdownTree = `\`\`\`sh\n${treeOutput}\n\`\`\``;
-        vscode.env.clipboard.writeText(markdownTree).then(() => {
-          outputChannel.appendLine(
-            'Markdown tree copied to clipboard successfully.'
-          );
-          vscode.window.showInformationMessage(
-            'Markdown tree copied to clipboard!'
-          );
-        });
-      } else {
-        const fileName = path.basename(uri.fsPath);
-        const markdown = `- ${fileName}`;
-        vscode.env.clipboard.writeText(markdown).then(() => {
-          outputChannel.appendLine(
-            `File name (${fileName}) copied as Markdown.`
-          );
-          vscode.window.showInformationMessage('File name copied as Markdown!');
-        });
-      }
     }
-  );
 
-  context.subscriptions.push(copyMdTree);
-};
+    const message = 'Directory tree copied to clipboard as Markdown.';
+    outputChannel.appendLine(message);
+    vscode.window.showInformationMessage(message);
+  };

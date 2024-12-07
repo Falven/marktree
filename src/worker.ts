@@ -1,39 +1,62 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
+import { buildMarkdownContent } from './utils/markdown.js';
+import { scanDirectory } from './utils/scanner.js';
 
-process.stdin.setEncoding('utf-8');
-process.stdin.on('data', async (data: string) => {
-  data = data.trim();
-  if (!data) {
-    return;
+(async () => {
+  const args = process.argv.slice(2);
+  // Expecting args: <type> <path> <workspaceRoot> <gitignore>
+  if (args.length < 4) {
+    console.error('Not enough arguments provided.');
+    process.exit(1);
   }
 
-  let message: { files?: string[] };
+  const [type, dirPath, workspaceRoot, gitignoreStr] = args;
+  const gitignore = gitignoreStr === 'true';
+
   try {
-    message = JSON.parse(data);
-  } catch (err) {
-    process.stdout.write(
-      JSON.stringify({ error: 'Invalid JSON input' }) + '\n'
+    const { treeLines, files } = await scanDirectory(
+      dirPath,
+      workspaceRoot,
+      gitignore ? ['.gitignore'] : []
     );
-    return;
-  }
 
-  if (!message.files || !Array.isArray(message.files)) {
-    process.stdout.write(
-      JSON.stringify({ error: 'No valid files array provided' }) + '\n'
-    );
-    return;
-  }
+    const { default: clipboardy } = await import('clipboardy');
 
-  const results: { file: string; content: string | null; error?: string }[] =
-    [];
-  for (const file of message.files) {
-    try {
-      const content = await fs.promises.readFile(file, 'utf-8');
-      results.push({ file, content });
-    } catch (err: any) {
-      results.push({ file, content: null, error: err.message });
+    let markdown = '';
+
+    if (type === 'tree') {
+      markdown = buildMarkdownContent([], undefined, treeLines);
+    } else {
+      const fileResults = await Promise.all(
+        files.map(async file => {
+          try {
+            const content = await fs.promises.readFile(file, 'utf-8');
+            return { file, content };
+          } catch (err: any) {
+            return { file, content: null, error: err.message };
+          }
+        })
+      );
+
+      if (type === 'readFiles') {
+        markdown = buildMarkdownContent(fileResults, dirPath);
+      } else if (type === 'treeAndReadFiles') {
+        markdown = buildMarkdownContent(fileResults, dirPath, treeLines);
+      } else {
+        console.error(`Invalid request type: ${type}`);
+        process.exit(1);
+      }
     }
-  }
 
-  process.stdout.write(JSON.stringify({ results }) + '\n');
-});
+    if (!markdown) {
+      console.error('No content to copy.');
+      process.exit(1);
+    }
+
+    await clipboardy.write(markdown);
+    process.exit(0);
+  } catch (err: any) {
+    console.error(err.message || String(err));
+    process.exit(1);
+  }
+})();

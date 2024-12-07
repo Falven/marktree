@@ -2,6 +2,8 @@
 
 ![Copy MD Tree](images/logo.png)
 
+Like the extension? [Contribute](https://github.com/Falven/marktree) to it, or consider [buying me a coffee.](https://buymeacoffee.com/lkpuiu42en).
+
 MarkTree helps you quickly copy directory structures and file contents as Markdown. With a single click, generate a neatly formatted Markdown tree of your project’s folders, files, and code blocks—perfect for LLMs.
 
 ## Features
