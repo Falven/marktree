@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { guessLanguageByExtension, scanDirectory } from '../scanner.js';
 
-export const registerCopyMdContents = (
+export const registerCopyMdContents = async (
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
 ) => {
@@ -23,7 +23,7 @@ export const registerCopyMdContents = (
       outputChannel.appendLine(`copyMdContents invoked on: ${uri.fsPath}`);
 
       if (stats.isDirectory()) {
-        const { files } = scanDirectory(uri.fsPath);
+        const { files } = await scanDirectory(uri.fsPath, outputChannel);
         outputChannel.appendLine(
           `Found ${files.length} file(s) in directory. Spawning worker process...`
         );

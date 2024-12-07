@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { guessLanguageByExtension, scanDirectory } from '../scanner.js';
 
-export const registerCopyMdTreeAndContents = (
+export const registerCopyMdTreeAndContents = async (
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
 ) => {
@@ -25,7 +25,10 @@ export const registerCopyMdTreeAndContents = (
       );
 
       if (stats.isDirectory()) {
-        const { treeLines, files } = scanDirectory(uri.fsPath);
+        const { treeLines, files } = await scanDirectory(
+          uri.fsPath,
+          outputChannel
+        );
         outputChannel.appendLine(
           `Found ${files.length} file(s) in directory for tree and contents.`
         );

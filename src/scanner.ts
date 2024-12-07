@@ -19,14 +19,13 @@ interface Frame {
 
 /**
  * Asynchronously scans a directory and all subdirectories, building an ASCII-style tree representation and
- * collecting file paths. It respects .gitignore patterns and skips ignored files/directories, but it does
- * not exclude hidden entries (those starting with '.').
+ * collecting file paths. It respects .gitignore patterns and skips ignored files/directories. Hidden files
+ * and directories are not filtered out.
  *
  * **Key Features:**
- * - Uses a depth-first approach with a stack, processing all directories in parallel per iteration.
+ * - Uses a depth-first approach with a stack, processing all directories currently available in parallel per iteration.
  * - Limits concurrency with p-limit to avoid overwhelming the file system.
- * - Maintains a stable order by sorting entries and processing them in sequence.
- * - Only skips ignored files/directories (as determined by .gitignore), not hidden ones.
+ * - Does not sort entries, presenting them in the order that the filesystem provides.
  * - Logs progress and actions using the provided output channel.
  *
  * @param directory The directory to scan.
@@ -47,7 +46,6 @@ export const scanDirectory = async (
   const stack: Frame[] = [{ dir: directory, prefix: '' }];
 
   while (stack.length > 0) {
-    // Grab all directories currently on the stack
     const currentBatch = stack.splice(0, stack.length);
 
     outputChannel.appendLine(
@@ -74,20 +72,10 @@ export const scanDirectory = async (
     );
 
     for (const { dir, prefix, entries: rawEntries } of batchResults) {
-      // Filter only ignored paths, do not skip hidden files/directories
+      // Filter only by ignore rules, not by hidden files/dirs
       let entries = rawEntries.filter(entry => {
         const fullPath = path.join(dir, entry.name);
         return !shouldIgnore(fullPath);
-      });
-
-      // Sort entries for stable output: directories first, then files alphabetically
-      entries.sort((a, b) => {
-        const aIsDir = a.isDirectory() ? 0 : 1;
-        const bIsDir = b.isDirectory() ? 0 : 1;
-        if (aIsDir !== bIsDir) {
-          return aIsDir - bIsDir;
-        }
-        return a.name.localeCompare(b.name);
       });
 
       const len = entries.length;
@@ -116,9 +104,7 @@ export const scanDirectory = async (
   }
 
   treeLines.push(`\n${counts.dirs} directories, ${counts.files} files`);
-  outputChannel.appendLine(
-    `Scan complete. Found ${counts.dirs} directories and ${counts.files} files.`
-  );
+  outputChannel.appendLine(`Scan complete. Found ${counts.dirs} directories and ${counts.files} files.`);
   return { treeLines, files };
 };
 

@@ -39,13 +39,14 @@ export async function activate(
 
   const config = vscode.workspace.getConfiguration('marktree');
   const gitignoreEnabled = config.get<boolean>('gitignore', true);
-  initializeIgnore(
+
+  await initializeIgnore(
     workspaceFolders[0].uri.fsPath,
     gitignoreEnabled,
     outputChannel
   );
 
-  registerCommands(context, outputChannel);
+  await registerCommands(context, outputChannel);
 
   outputChannel.appendLine('Extension activated.');
 }

@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { scanDirectory } from '../scanner.js';
 
-export const registerCopyMdTree = (
+export const registerCopyMdTree = async (
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
 ) => {
@@ -20,7 +20,7 @@ export const registerCopyMdTree = (
       outputChannel.appendLine(`copyMdTree invoked on: ${uri.fsPath}`);
 
       if (stats.isDirectory()) {
-        const { treeLines } = scanDirectory(uri.fsPath);
+        const { treeLines } = await scanDirectory(uri.fsPath, outputChannel);
         const treeOutput = treeLines.join('\n');
         const markdownTree = `\`\`\`sh\n${treeOutput}\n\`\`\``;
         vscode.env.clipboard.writeText(markdownTree).then(() => {
