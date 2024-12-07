@@ -57,7 +57,6 @@ export const scanDirectory = async (directory: string): Promise<ScanResult> => {
     );
 
     for (const { dir, prefix, entries: rawEntries } of batchResults) {
-      // Filter ignored paths
       const entries = rawEntries.filter(entry => {
         const fullPath = dir + path.sep + entry.name;
         return !shouldIgnore(fullPath);
@@ -75,7 +74,6 @@ export const scanDirectory = async (directory: string): Promise<ScanResult> => {
         treeLines.push(prefix + part0 + name);
 
         if (entry.isDirectory()) {
-          // Check if we have visited this directory before
           if (!visited.has(fullPath)) {
             visited.add(fullPath);
             counts.dirs++;
@@ -84,12 +82,7 @@ export const scanDirectory = async (directory: string): Promise<ScanResult> => {
               prefix: prefix + part1,
             });
           }
-        } else if (entry.isSymbolicLink()) {
-          // Symlink: treat as file
-          counts.files++;
-          files.push(fullPath);
         } else {
-          // Regular file
           counts.files++;
           files.push(fullPath);
         }
