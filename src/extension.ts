@@ -4,15 +4,16 @@ import { initializeIgnore } from './gitignore.js';
 
 let outputChannel: vscode.OutputChannel;
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(
+  context: vscode.ExtensionContext
+): Promise<void> {
   outputChannel = vscode.window.createOutputChannel('MarkTree');
-  outputChannel.show();
-  outputChannel.appendLine('MarkTree extension activated.');
 
-  const config = vscode.workspace.getConfiguration('marktree');
-  const gitignoreEnabled = config.get<boolean>('gitignore', true);
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-  initializeIgnore(workspaceFolder, gitignoreEnabled);
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    outputChannel.appendLine('No workspace folder found.');
+    return;
+  }
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(e => {
@@ -22,19 +23,33 @@ export function activate(context: vscode.ExtensionContext): void {
           'gitignore',
           true
         );
-        const updatedWorkspaceFolder =
-          vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-        initializeIgnore(updatedWorkspaceFolder, updatedGitignoreEnabled);
+
+        initializeIgnore(
+          workspaceFolders[0].uri.fsPath,
+          updatedGitignoreEnabled,
+          outputChannel
+        );
+
         outputChannel.appendLine(
-          `marktree.gitignore changed to ${updatedGitignoreEnabled}. Re-initialized ignore logic.`
+          `marktree.gitignore setting changed to ${updatedGitignoreEnabled}. Re-initialized ignore logic.`
         );
       }
     })
   );
 
+  const config = vscode.workspace.getConfiguration('marktree');
+  const gitignoreEnabled = config.get<boolean>('gitignore', true);
+  initializeIgnore(
+    workspaceFolders[0].uri.fsPath,
+    gitignoreEnabled,
+    outputChannel
+  );
+
   registerCommands(context, outputChannel);
+
+  outputChannel.appendLine('Extension activated.');
 }
 
 export function deactivate(): void {
-  outputChannel.appendLine('MarkTree extension deactivated.');
+  outputChannel.appendLine('Extension deactivated.');
 }

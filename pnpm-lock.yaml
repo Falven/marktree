@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@common.js/p-limit':
+        specifier: ^6.1.0
+        version: 6.1.0
+      fast-glob:
+        specifier: ^3.3.2
+        version: 3.3.2
       ignore:
         specifier: ^6.0.2
         version: 6.0.2
@@ -44,6 +50,14 @@ packages:
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
+
+  '@common.js/p-limit@6.1.0':
+    resolution: {integrity: sha512-yqcqAcQUb0RtUo7xmfRciX2yvB6k581Z+nxnwD5WO0E5fKhxn40Y1dUBA6a9dsTCRCnQn9y7NEOACulnD0KpOQ==}
+    engines: {node: '>=18'}
+
+  '@common.js/yocto-queue@1.1.1':
+    resolution: {integrity: sha512-0GnsRejajjHB6CYYh/4J4qU8gHek56arPoQEFKBFSNFkMLBgO4lIfxD4syeB5NDV+Zlnl1zxkYCuO7M/38j/OA==}
+    engines: {node: '>=12.20'}
 
   '@eslint-community/eslint-utils@4.4.1':
     resolution: {integrity: sha512-s3O3waFUrMV8P/XaF/+ZTp1X9XBZW1a4B97ZnjQF2KYWaFD2A8KyFBsrsfSjEmjn3RGWAIuvlneuZm3CUK3jbA==}
@@ -994,6 +1008,12 @@ packages:
 snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
+
+  '@common.js/p-limit@6.1.0':
+    dependencies:
+      '@common.js/yocto-queue': 1.1.1
+
+  '@common.js/yocto-queue@1.1.1': {}
 
   '@eslint-community/eslint-utils@4.4.1(eslint@9.16.0)':
     dependencies:
