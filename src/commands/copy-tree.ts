@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { runInWorker } from '../run-in-worker.js';
+import type { WorkerScanDirectoryResult } from '../types.js';
 
 export const registerCopyMdTree = (
   context: vscode.ExtensionContext,
@@ -16,17 +17,19 @@ export const registerCopyMdTree = (
         return;
       }
 
-      const stats = fs.statSync(uri.fsPath);
       outputChannel.appendLine(`copyMdTree invoked on: ${uri.fsPath}`);
+      const stats = fs.statSync(uri.fsPath);
 
+      let markdown = '';
       if (stats.isDirectory()) {
-        const { treeLines } = await runInWorker(
+        const { treeLines } = await runInWorker<WorkerScanDirectoryResult>(
           { action: 'scanDirectory', dir: uri.fsPath },
           context
         );
         const treeOutput = treeLines.join('\n');
-        const markdownTree = `\`\`\`sh\n${treeOutput}\n\`\`\``;
-        await vscode.env.clipboard.writeText(markdownTree);
+        markdown = `\`\`\`sh\n${treeOutput}\n\`\`\``;
+
+        await vscode.env.clipboard.writeText(markdown);
         outputChannel.appendLine(
           'Markdown tree copied to clipboard successfully.'
         );
@@ -35,7 +38,8 @@ export const registerCopyMdTree = (
         );
       } else {
         const fileName = path.basename(uri.fsPath);
-        const markdown = `- ${fileName}`;
+        markdown = `- ${fileName}`;
+
         await vscode.env.clipboard.writeText(markdown);
         outputChannel.appendLine(`File name (${fileName}) copied as Markdown.`);
         vscode.window.showInformationMessage('File name copied as Markdown!');

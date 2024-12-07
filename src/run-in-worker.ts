@@ -1,10 +1,12 @@
+// src/runInWorker.ts
 import { spawn } from 'child_process';
 import * as vscode from 'vscode';
+import type { WorkerActions, WorkerReturn } from './types.js';
 
-export function runInWorker(
-  payload: object,
+export function runInWorker<T extends WorkerReturn>(
+  payload: WorkerActions,
   context: vscode.ExtensionContext
-): Promise<any> {
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const workerPath = context.asAbsolutePath('out/worker.js');
 
@@ -23,17 +25,11 @@ export function runInWorker(
         for (const line of lines) {
           try {
             const parsed = JSON.parse(line);
-            if (parsed.treeLines && parsed.files && parsed.fileResults) {
-              // scanAndReadDirectory result
-              resolve(parsed);
-            } else if (parsed.treeLines && parsed.files) {
-              // scanDirectory result
-              resolve(parsed);
-            } else if (parsed.results) {
-              // readFiles result
-              resolve(parsed.results);
-            } else if (parsed.error) {
+            if (parsed.error) {
               reject(new Error(parsed.error));
+            } else {
+              // Cast parsed to T, trusting that the caller used correct action
+              resolve(parsed as T);
             }
           } catch {
             reject(new Error('Invalid JSON from worker.'));
@@ -43,7 +39,7 @@ export function runInWorker(
     });
 
     child.stderr.on('data', data => {
-      // Optionally log or ignore
+      console.error(`Worker error: ${data}`);
     });
 
     child.on('error', error => {

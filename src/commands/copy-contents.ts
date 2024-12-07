@@ -3,6 +3,10 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { guessLanguageByExtension } from '../lang.js';
 import { runInWorker } from '../run-in-worker.js';
+import type {
+  WorkerReadFilesResult,
+  WorkerScanDirectoryResult,
+} from '../types.js';
 
 export const registerCopyMdContents = (
   context: vscode.ExtensionContext,
@@ -19,72 +23,56 @@ export const registerCopyMdContents = (
         return;
       }
 
-      const stats = fs.statSync(uri.fsPath);
       outputChannel.appendLine(`copyMdContents invoked on: ${uri.fsPath}`);
+      const stats = fs.statSync(uri.fsPath);
 
+      let files: string[];
       if (stats.isDirectory()) {
-        const { files } = await runInWorker(
-          { action: 'scanDirectory', dir: uri.fsPath },
+        const { files: scannedFiles } =
+          await runInWorker<WorkerScanDirectoryResult>(
+            { action: 'scanDirectory', dir: uri.fsPath },
+            context
+          );
+        outputChannel.appendLine(
+          `Found ${scannedFiles.length} file(s) in directory. Spawning worker to read files...`
+        );
+        files = scannedFiles;
+      } else {
+        files = [uri.fsPath];
+      }
+
+      try {
+        const results = await runInWorker<WorkerReadFilesResult>(
+          { action: 'readFiles', files },
           context
         );
+
+        let markdown = '';
+        for (const result of results.results) {
+          if (result.error) {
+            outputChannel.appendLine(
+              `Error reading ${result.file}: ${result.error}`
+            );
+            continue;
+          }
+
+          const relPath = stats.isDirectory()
+            ? path.relative(uri.fsPath, result.file)
+            : path.basename(result.file);
+          const lang = guessLanguageByExtension(result.file);
+          markdown += `${relPath}\n\`\`\`${lang}\n${result.content}\n\`\`\`\n\n`;
+        }
+
+        await vscode.env.clipboard.writeText(markdown);
         outputChannel.appendLine(
-          `Found ${files.length} file(s) in directory. Spawning worker to read files...`
+          'All readable file contents copied to clipboard (via worker).'
         );
-
-        try {
-          const results = await runInWorker(
-            { action: 'readFiles', files },
-            context
-          );
-          let markdown = '';
-          for (const r of results) {
-            if (r.error) {
-              markdown += `Error reading ${r.file}: ${r.error}\n`;
-            } else if (r.content !== null) {
-              const relPath = path.relative(uri.fsPath, r.file);
-              const lang = guessLanguageByExtension(r.file) || 'plaintext';
-              markdown += `${relPath}\n\`\`\`${lang}\n${r.content}\n\`\`\`\n\n`;
-            }
-          }
-
-          await vscode.env.clipboard.writeText(markdown);
-          outputChannel.appendLine(
-            'All file contents copied to clipboard (via worker).'
-          );
-          vscode.window.showInformationMessage(
-            'All file contents copied to clipboard!'
-          );
-        } catch (err: any) {
-          outputChannel.appendLine(`Error from worker: ${err.message}`);
-          vscode.window.showErrorMessage(`Error from worker: ${err.message}`);
-        }
-      } else {
-        try {
-          const results = await runInWorker(
-            { action: 'readFiles', files: [uri.fsPath] },
-            context
-          );
-          const r = results[0];
-          if (r.error) {
-            throw new Error(r.error);
-          }
-          const lang = guessLanguageByExtension(uri.fsPath) || 'plaintext';
-          const markdownContents = `${path.basename(
-            uri.fsPath
-          )}\n\`\`\`${lang}\n${r.content}\n\`\`\``;
-          await vscode.env.clipboard.writeText(markdownContents);
-          outputChannel.appendLine(
-            `File contents for ${uri.fsPath} copied to clipboard (via worker).`
-          );
-          vscode.window.showInformationMessage(
-            'File contents copied to clipboard!'
-          );
-        } catch (error: any) {
-          outputChannel.appendLine(
-            `Error from worker (single file): ${error.message}`
-          );
-          vscode.window.showErrorMessage(`Error from worker: ${error.message}`);
-        }
+        vscode.window.showInformationMessage(
+          'All readable file contents copied to clipboard!'
+        );
+      } catch (err: any) {
+        outputChannel.appendLine(`Error from worker: ${err.message}`);
+        vscode.window.showErrorMessage(`Error from worker: ${err.message}`);
       }
     }
   );

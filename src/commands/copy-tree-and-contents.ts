@@ -1,8 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { guessLanguageByExtension } from '../lang';
+import { guessLanguageByExtension } from '../lang.js';
 import { runInWorker } from '../run-in-worker.js';
+import type {
+  WorkerReadFilesResult,
+  WorkerScanAndReadDirectoryResult,
+} from '../types.js';
 
 export const registerCopyMdTreeAndContents = (
   context: vscode.ExtensionContext,
@@ -19,44 +23,41 @@ export const registerCopyMdTreeAndContents = (
         return;
       }
 
-      const stats = fs.statSync(uri.fsPath);
       outputChannel.appendLine(
         `copyMdTreeAndContents invoked on: ${uri.fsPath}`
       );
+      const stats = fs.statSync(uri.fsPath);
+
+      let markdown = '';
 
       if (stats.isDirectory()) {
-        // Single call for both tree and contents
-        const { treeLines, files, fileResults } = await runInWorker(
-          { action: 'scanAndReadDirectory', dir: uri.fsPath },
-          context
-        );
+        const { treeLines, files, fileResults } =
+          await runInWorker<WorkerScanAndReadDirectoryResult>(
+            { action: 'scanAndReadDirectory', dir: uri.fsPath },
+            context
+          );
 
         outputChannel.appendLine(
           `Found ${files.length} file(s) in directory for tree and contents.`
         );
 
+        // Add the tree
         const treeOutput = treeLines.join('\n');
-        const lines: string[] = [];
-        lines.push(`\`\`\`sh\n${treeOutput}\n\`\`\`\n\n`);
+        markdown += `\`\`\`sh\n${treeOutput}\n\`\`\`\n\n`;
 
-        if (files.length === 0) {
-          outputChannel.appendLine(
-            'No files found in the directory for tree and contents.'
-          );
-          lines.push('No files found in this directory.\n');
-        } else {
-          for (const r of fileResults) {
-            const relPath = path.relative(uri.fsPath, r.file);
-            const lang = guessLanguageByExtension(r.file) || 'plaintext';
-            if (r.error) {
-              lines.push(`Error reading ${relPath}: ${r.error}\n`);
-            } else if (r.content !== null) {
-              lines.push(`${relPath}\n\`\`\`${lang}\n${r.content}\n\`\`\`\n\n`);
-            }
+        // Add file contents only if we have files
+        // (If no files, we just don't add anything)
+        for (const r of fileResults) {
+          const relPath = path.relative(uri.fsPath, r.file);
+          const lang = guessLanguageByExtension(r.file);
+          if (r.error) {
+            // Log error, but do not add to markdown
+            outputChannel.appendLine(`Error reading ${relPath}: ${r.error}`);
+          } else if (r.content !== null) {
+            markdown += `${relPath}\n\`\`\`${lang}\n${r.content}\n\`\`\`\n\n`;
           }
         }
 
-        const markdown = lines.join('');
         await vscode.env.clipboard.writeText(markdown);
         outputChannel.appendLine(
           'Markdown tree and contents copied to clipboard.'
@@ -65,22 +66,24 @@ export const registerCopyMdTreeAndContents = (
           'Markdown tree and contents copied to clipboard!'
         );
       } else {
-        // Single file scenario: just read it directly
-        const results = await runInWorker(
+        const { results } = await runInWorker<WorkerReadFilesResult>(
           { action: 'readFiles', files: [uri.fsPath] },
           context
         );
+
         const r = results[0];
         if (r.error) {
           outputChannel.appendLine(`Error from worker: ${r.error}`);
           vscode.window.showErrorMessage(`Error from worker: ${r.error}`);
           return;
         }
-        const lang = guessLanguageByExtension(uri.fsPath) || 'plaintext';
-        const markdownContents = `${path.basename(
-          uri.fsPath
-        )}\n\`\`\`${lang}\n${r.content}\n\`\`\``;
-        await vscode.env.clipboard.writeText(markdownContents);
+
+        const lang = guessLanguageByExtension(uri.fsPath);
+        markdown += `${path.basename(uri.fsPath)}\n\`\`\`${lang}\n${
+          r.content
+        }\n\`\`\``;
+
+        await vscode.env.clipboard.writeText(markdown);
         outputChannel.appendLine(
           `File contents for ${uri.fsPath} copied to clipboard (tree and contents mode).`
         );
