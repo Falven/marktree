@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { scanDirectory } from '../scanner.js';
+import { runInWorker } from '../run-in-worker.js';
 
-export const registerCopyMdTree = async (
+export const registerCopyMdTree = (
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
 ) => {
@@ -20,26 +20,25 @@ export const registerCopyMdTree = async (
       outputChannel.appendLine(`copyMdTree invoked on: ${uri.fsPath}`);
 
       if (stats.isDirectory()) {
-        const { treeLines } = await scanDirectory(uri.fsPath, outputChannel);
+        const { treeLines } = await runInWorker(
+          { action: 'scanDirectory', dir: uri.fsPath },
+          context
+        );
         const treeOutput = treeLines.join('\n');
         const markdownTree = `\`\`\`sh\n${treeOutput}\n\`\`\``;
-        vscode.env.clipboard.writeText(markdownTree).then(() => {
-          outputChannel.appendLine(
-            'Markdown tree copied to clipboard successfully.'
-          );
-          vscode.window.showInformationMessage(
-            'Markdown tree copied to clipboard!'
-          );
-        });
+        await vscode.env.clipboard.writeText(markdownTree);
+        outputChannel.appendLine(
+          'Markdown tree copied to clipboard successfully.'
+        );
+        vscode.window.showInformationMessage(
+          'Markdown tree copied to clipboard!'
+        );
       } else {
         const fileName = path.basename(uri.fsPath);
         const markdown = `- ${fileName}`;
-        vscode.env.clipboard.writeText(markdown).then(() => {
-          outputChannel.appendLine(
-            `File name (${fileName}) copied as Markdown.`
-          );
-          vscode.window.showInformationMessage('File name copied as Markdown!');
-        });
+        await vscode.env.clipboard.writeText(markdown);
+        outputChannel.appendLine(`File name (${fileName}) copied as Markdown.`);
+        vscode.window.showInformationMessage('File name copied as Markdown!');
       }
     }
   );

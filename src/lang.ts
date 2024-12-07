@@ -1,4 +1,5 @@
-// Keys are file extensions without the leading '.'.
+import path from 'node:path';
+
 // Values are short code block language identifiers commonly used in Markdown code fences.
 export const knownLangs: Record<string, string> = {
   // JavaScript and derivatives
@@ -90,4 +91,17 @@ export const knownLangs: Record<string, string> = {
   csv: 'csv',
   tsv: 'csv',
   ini: 'ini',
+  txt: 'txt',
+};
+
+/**
+ * Guesses the programming language based on a file's extension.
+ * Falls back to 'plaintext' if the extension is not recognized.
+ *
+ * @param filePath The full path of the file
+ * @returns A string representing the guessed language.
+ */
+export const guessLanguageByExtension = (filePath: string): string => {
+  const ext = path.extname(filePath).toLowerCase().replace('.', '');
+  return knownLangs[ext] || knownLangs['txt'];
 };

@@ -1,10 +1,10 @@
-import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { guessLanguageByExtension, scanDirectory } from '../scanner.js';
+import { guessLanguageByExtension } from '../lang.js';
+import { runInWorker } from '../run-in-worker.js';
 
-export const registerCopyMdContents = async (
+export const registerCopyMdContents = (
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
 ) => {
@@ -23,13 +23,19 @@ export const registerCopyMdContents = async (
       outputChannel.appendLine(`copyMdContents invoked on: ${uri.fsPath}`);
 
       if (stats.isDirectory()) {
-        const { files } = await scanDirectory(uri.fsPath, outputChannel);
+        const { files } = await runInWorker(
+          { action: 'scanDirectory', dir: uri.fsPath },
+          context
+        );
         outputChannel.appendLine(
-          `Found ${files.length} file(s) in directory. Spawning worker process...`
+          `Found ${files.length} file(s) in directory. Spawning worker to read files...`
         );
 
         try {
-          const results = await runInWorker(files, outputChannel, context);
+          const results = await runInWorker(
+            { action: 'readFiles', files },
+            context
+          );
           let markdown = '';
           for (const r of results) {
             if (r.error) {
@@ -55,8 +61,7 @@ export const registerCopyMdContents = async (
       } else {
         try {
           const results = await runInWorker(
-            [uri.fsPath],
-            outputChannel,
+            { action: 'readFiles', files: [uri.fsPath] },
             context
           );
           const r = results[0];
@@ -85,57 +90,4 @@ export const registerCopyMdContents = async (
   );
 
   context.subscriptions.push(copyMdContents);
-};
-
-const runInWorker = async (
-  files: string[],
-  outputChannel: vscode.OutputChannel,
-  context: vscode.ExtensionContext
-): Promise<{ file: string; content: string | null; error?: string }[]> => {
-  return new Promise((resolve, reject) => {
-    const workerPath = context.asAbsolutePath('out/worker.js');
-
-    const child = spawn(process.execPath, [workerPath], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      detached: true,
-    });
-
-    let buffer = '';
-    child.stdout.setEncoding('utf-8');
-    child.stdout.on('data', (data: string) => {
-      buffer += data;
-      if (buffer.includes('\n')) {
-        const lines = buffer.split('\n').filter(line => line.trim() !== '');
-        buffer = '';
-        for (const line of lines) {
-          try {
-            const parsed = JSON.parse(line);
-            if (parsed.results) {
-              resolve(parsed.results);
-            } else if (parsed.error) {
-              reject(new Error(parsed.error));
-            }
-          } catch {
-            reject(new Error('Invalid JSON from worker.'));
-          }
-        }
-      }
-    });
-
-    child.stderr.on('data', data => {
-      outputChannel.appendLine(`Worker stderr: ${data}`);
-    });
-
-    child.on('error', error => {
-      reject(new Error(`Worker process error: ${error.message}`));
-    });
-
-    child.on('close', code => {
-      if (code !== 0) {
-        reject(new Error(`Worker exited with code ${code}`));
-      }
-    });
-
-    child.stdin.write(JSON.stringify({ files }) + '\n');
-  });
 };
