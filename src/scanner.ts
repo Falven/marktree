@@ -19,13 +19,14 @@ interface Frame {
 
 /**
  * Asynchronously scans a directory and all subdirectories, building an ASCII-style tree representation and
- * collecting file paths. It respects .gitignore patterns and skips hidden files/directories.
+ * collecting file paths. It respects .gitignore patterns and skips ignored files/directories, but it does
+ * not exclude hidden entries (those starting with '.').
  *
  * **Key Features:**
- * - Uses a depth-first approach with a stack, but processes multiple directories in parallel batches for performance.
+ * - Uses a depth-first approach with a stack, processing all directories in parallel per iteration.
  * - Limits concurrency with p-limit to avoid overwhelming the file system.
  * - Maintains a stable order by sorting entries and processing them in sequence.
- * - Skips ignored and hidden files/directories early to save unnecessary work.
+ * - Only skips ignored files/directories (as determined by .gitignore), not hidden ones.
  * - Logs progress and actions using the provided output channel.
  *
  * @param directory The directory to scan.
@@ -45,40 +46,25 @@ export const scanDirectory = async (
 
   const stack: Frame[] = [{ dir: directory, prefix: '' }];
 
-  // Number of directories processed in parallel per iteration
-  const batchSize = 5;
-
   while (stack.length > 0) {
-    // Take a batch of directories from the stack
-    const currentBatch: Frame[] = [];
-    for (let i = 0; i < batchSize && stack.length > 0; i++) {
-      currentBatch.push(stack.pop()!);
-    }
-
-    if (currentBatch.length === 0) {
-      continue;
-    }
+    // Grab all directories currently on the stack
+    const currentBatch = stack.splice(0, stack.length);
 
     outputChannel.appendLine(
-      `Processing batch of ${currentBatch.length} directories in parallel...`
+      `Processing ${currentBatch.length} directories in parallel...`
     );
 
-    // Read all directories in this batch in parallel
     const batchResults = await Promise.all(
       currentBatch.map(async frame => {
         const { dir, prefix } = frame;
         try {
-          outputChannel.appendLine(`Reading directory: ${dir}`);
           const entries = await limit(() =>
             fs.promises.readdir(dir, { withFileTypes: true })
-          );
-          outputChannel.appendLine(
-            `Read ${entries.length} entries from: ${dir}`
           );
           return { dir, prefix, entries };
         } catch (err) {
           outputChannel.appendLine(
-            `Failed to read directory: ${dir}, error: ${
+            `Failed to read directory: ${dir}, Error: ${
               err instanceof Error ? err.message : String(err)
             }`
           );
@@ -88,22 +74,13 @@ export const scanDirectory = async (
     );
 
     for (const { dir, prefix, entries: rawEntries } of batchResults) {
+      // Filter only ignored paths, do not skip hidden files/directories
       let entries = rawEntries.filter(entry => {
-        if (entry.name.charAt(0) === '.') {
-          return false;
-        }
         const fullPath = path.join(dir, entry.name);
-        if (shouldIgnore(fullPath)) {
-          return false;
-        }
-        return true;
+        return !shouldIgnore(fullPath);
       });
 
-      outputChannel.appendLine(
-        `Filtered entries in ${dir}: ${rawEntries.length} -> ${entries.length} after hidden/ignore`
-      );
-
-      // Sort entries: directories first, then files, alphabetical
+      // Sort entries for stable output: directories first, then files alphabetically
       entries.sort((a, b) => {
         const aIsDir = a.isDirectory() ? 0 : 1;
         const bIsDir = b.isDirectory() ? 0 : 1;
@@ -135,21 +112,13 @@ export const scanDirectory = async (
           files.push(fullPath);
         }
       }
-
-      if (len > 0) {
-        outputChannel.appendLine(
-          `Processed ${len} entries in directory: ${dir}`
-        );
-      } else {
-        outputChannel.appendLine(`No entries to process in directory: ${dir}`);
-      }
     }
   }
 
-  outputChannel.appendLine(
-    `Scan complete: ${counts.dirs} directories, ${counts.files} files`
-  );
   treeLines.push(`\n${counts.dirs} directories, ${counts.files} files`);
+  outputChannel.appendLine(
+    `Scan complete. Found ${counts.dirs} directories and ${counts.files} files.`
+  );
   return { treeLines, files };
 };
 
@@ -157,7 +126,7 @@ export const scanDirectory = async (
  * Guesses the programming language based on a file's extension.
  * Falls back to 'plaintext' if the extension is not recognized.
  *
- * @param filePath The full path of the file.
+ * @param filePath The full path of the file
  * @returns A string representing the guessed language.
  */
 export const guessLanguageByExtension = (filePath: string): string => {
