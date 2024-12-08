@@ -7,5 +7,5 @@ export const DEFAULT_ADDITIONAL_IGNORES = [
   'pnpm-lock.yaml',
   'package-lock.json',
 ];
-export const DEFAULT_SHOW_COPYING_MSG = true;
-export const DEFAULT_SHOW_COPIED_MSG = false;
+export const DEFAULT_SHOW_COPYING_MSG = false;
+export const DEFAULT_SHOW_COPIED_MSG = true;
