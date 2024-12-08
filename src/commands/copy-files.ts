@@ -70,7 +70,7 @@ export const copyMdFiles =
 
     const showCopiedMsg = vscode.workspace
       .getConfiguration('marktree')
-      .get<boolean>('showCopyingMessage', DEFAULT_SHOW_COPIED_MSG);
+      .get<boolean>('showCopiedMessage', DEFAULT_SHOW_COPIED_MSG);
 
     message = 'File contents copied to clipboard as Markdown.';
     outputChannel.appendLine(message);

@@ -70,7 +70,7 @@ export const copyMdTree =
 
     const showCopiedMsg = vscode.workspace
       .getConfiguration('marktree')
-      .get<boolean>('showCopyingMessage', DEFAULT_SHOW_COPIED_MSG);
+      .get<boolean>('showCopiedMessage', DEFAULT_SHOW_COPIED_MSG);
 
     message = 'Directory tree copied to clipboard as Markdown.';
     outputChannel.appendLine(message);
