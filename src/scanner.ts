@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { shouldIgnore } from './gitignore.js';
 
 interface ScanResult {
   treeLines: string[];
@@ -41,7 +40,8 @@ export const scanDirectory = async (
     if (ignoredPaths) {
       entries = entries.filter(entry => {
         const fullPath = path.join(dir, entry.name);
-        return !shouldIgnore(fullPath, workspaceRoot, ignoredPaths);
+        const rel = path.relative(workspaceRoot, fullPath);
+        return !ignoredPaths.has(rel);
       });
     }
 

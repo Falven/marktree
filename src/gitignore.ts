@@ -1,5 +1,4 @@
 import walk from 'ignore-walk';
-import * as path from 'path';
 import * as vscode from 'vscode';
 
 export const initializeIgnore = async (
@@ -36,13 +35,4 @@ export const initializeIgnore = async (
       );
     }
   }
-};
-
-export const shouldIgnore = (
-  fullPath: string,
-  workspaceRoot: string,
-  ignoredPaths: Set<string>
-): boolean => {
-  const rel = path.relative(workspaceRoot, fullPath);
-  return !ignoredPaths.has(rel);
 };
