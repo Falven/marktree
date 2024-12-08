@@ -4,6 +4,8 @@ import {
   DEFAULT_GITIGNORE,
   DEFAULT_IGNORE_BINARY,
   DEFAULT_IGNORE_FILES,
+  DEFAULT_SHOW_COPIED_MSG,
+  DEFAULT_SHOW_COPYING_MSG,
 } from '../config.js';
 import { runInWorker } from '../utils/run-in-worker.js';
 
@@ -17,8 +19,15 @@ export const copyMdFiles =
       return;
     }
 
+    const showCopyingMsg = vscode.workspace
+      .getConfiguration('marktree')
+      .get<boolean>('showCopyingMessage', DEFAULT_SHOW_COPYING_MSG);
+
     let message = 'Copying file contents to clipboard as Markdown.';
     outputChannel.appendLine(message);
+    if (showCopyingMsg) {
+      vscode.window.showInformationMessage(message);
+    }
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -59,7 +68,13 @@ export const copyMdFiles =
       }
     }
 
+    const showCopiedMsg = vscode.workspace
+      .getConfiguration('marktree')
+      .get<boolean>('showCopyingMessage', DEFAULT_SHOW_COPIED_MSG);
+
     message = 'File contents copied to clipboard as Markdown.';
     outputChannel.appendLine(message);
-    vscode.window.showInformationMessage(message);
+    if (showCopiedMsg) {
+      vscode.window.showInformationMessage(message);
+    }
   };
