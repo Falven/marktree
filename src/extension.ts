@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { copyMdContents } from './commands/copy-contents.js';
-import { copyMdTreeAndContents } from './commands/copy-tree-and-contents.js';
+import { copyMdFiles } from './commands/copy-files.js';
+import { copyMdTreeAndFiles } from './commands/copy-tree-and-files.js';
 import { copyMdTree } from './commands/copy-tree.js';
 
 let outputChannel: vscode.OutputChannel;
@@ -9,7 +9,6 @@ export const activate = async (
   context: vscode.ExtensionContext
 ): Promise<void> => {
   outputChannel = vscode.window.createOutputChannel('MarkTree');
-  outputChannel.show();
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
@@ -19,14 +18,14 @@ export const activate = async (
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'extension.copyMdContents',
-      copyMdContents(context, outputChannel)
+      'extension.copyMdFiles',
+      copyMdFiles(context, outputChannel)
     )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'extension.copyMdTreeAndContents',
-      copyMdTreeAndContents(context, outputChannel)
+      'extension.copyMdTreeAndFiles',
+      copyMdTreeAndFiles(context, outputChannel)
     )
   );
 

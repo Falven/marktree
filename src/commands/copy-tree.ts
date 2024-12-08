@@ -1,4 +1,10 @@
 import * as vscode from 'vscode';
+import {
+  DEFAULT_ADDITIONAL_IGNORES,
+  DEFAULT_GITIGNORE,
+  DEFAULT_IGNORE_BINARY,
+  DEFAULT_IGNORE_FILES,
+} from '../config.js';
 import { runInWorker } from '../utils/run-in-worker.js';
 
 export const copyMdTree =
@@ -11,7 +17,8 @@ export const copyMdTree =
       return;
     }
 
-    outputChannel.appendLine(`copyMdTree invoked on: ${uri.fsPath}`);
+    let message = 'Copying directory tree to clipboard as Markdown.';
+    outputChannel.appendLine(message);
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -25,11 +32,19 @@ export const copyMdTree =
       await runInWorker(
         {
           type: 'tree',
-          path: uri.fsPath,
+          selectedPath: uri.fsPath,
           workspaceRoot: workspaceFolders[0].uri.fsPath,
-          gitignore: vscode.workspace
+          ignoreFiles: vscode.workspace
             .getConfiguration('marktree')
-            .get<boolean>('gitignore', true),
+            .get<boolean>('gitignore', DEFAULT_GITIGNORE)
+            ? DEFAULT_IGNORE_FILES
+            : [],
+          ignoreBinary: vscode.workspace
+            .getConfiguration('marktree')
+            .get<boolean>('ignoreBinary', DEFAULT_IGNORE_BINARY),
+          additionalIgnores: vscode.workspace
+            .getConfiguration('marktree')
+            .get<string[]>('additionalIgnores', DEFAULT_ADDITIONAL_IGNORES),
         },
         context,
         outputChannel
@@ -44,7 +59,7 @@ export const copyMdTree =
       }
     }
 
-    const message = 'Directory tree copied to clipboard as Markdown.';
+    message = 'Directory tree copied to clipboard as Markdown.';
     outputChannel.appendLine(message);
     vscode.window.showInformationMessage(message);
   };

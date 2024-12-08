@@ -26,7 +26,7 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -42,37 +42,49 @@
         "marktree.gitignore": {
           "type": "boolean",
           "default": true,
-          "description": "If enabled, MarkTree will ignore files and directories listed in your workspace .gitignores."
+          "description": "If enabled, MarkTree will ignore entries from your workspace .gitignores."
+        },
+        "marktree.ignoreBinary": {
+          "type": "boolean",
+          "default": true,
+          "description": "If enabled, MarkTree will not copy the contents of binary files."
+        },
+        "marktree.additionalIgnores": {
+          "type": "array",
+          "default": [
+            ".gitignore"
+          ],
+          "description": "A list of additional .gitignore entries to ignore. Defaults to ['.gitignore']."
         },
         "marktree.showTreeCommand": {
           "type": "boolean",
           "default": true,
-          "description": "Show the 'Copy MD Tree' command in the context menu."
+          "description": "Show the 'Copy Md Tree' command in the context menu."
         },
-        "marktree.showContentsCommand": {
+        "marktree.showFilesCommand": {
           "type": "boolean",
           "default": true,
-          "description": "Show the 'Copy MD Files' command in the context menu."
+          "description": "Show the 'Copy Md Files' command in the context menu."
         },
-        "marktree.showBothCommand": {
+        "marktree.showTreeAndFilesCommand": {
           "type": "boolean",
           "default": true,
-          "description": "Show the 'Copy MD Both' command in the context menu."
+          "description": "Show the 'Copy Md Tree & Files' command in the context menu."
         }
       }
     },
     "commands": [
       {
         "command": "extension.copyMdTree",
-        "title": "Copy MD Tree"
+        "title": "Copy Md Tree"
       },
       {
-        "command": "extension.copyMdContents",
-        "title": "Copy MD Files"
+        "command": "extension.copyMdFiles",
+        "title": "Copy Md Files"
       },
       {
-        "command": "extension.copyMdTreeAndContents",
-        "title": "Copy MD Tree and Files"
+        "command": "extension.copyMdTreeAndFiles",
+        "title": "Copy Md Tree & Files"
       }
     ],
     "menus": {
@@ -83,14 +95,14 @@
           "when": "config.marktree.showTreeCommand"
         },
         {
-          "command": "extension.copyMdContents",
+          "command": "extension.copyMdFiles",
           "group": "7_marktree@2",
-          "when": "config.marktree.showContentsCommand"
+          "when": "config.marktree.showFilesCommand"
         },
         {
-          "command": "extension.copyMdTreeAndContents",
+          "command": "extension.copyMdTreeAndFiles",
           "group": "7_marktree@3",
-          "when": "config.marktree.showBothCommand"
+          "when": "config.marktree.showTreeAndFilesCommand"
         }
       ]
     }
@@ -104,7 +116,6 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/ignore-walk": "^4.0.3",
     "@types/mocha": "^10.0.9",
     "@types/node": "~20.17.9",
     "@types/vscode": "^1.95.0",
@@ -116,8 +127,9 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
+    "binary-extensions": "^3.0.0",
     "clipboardy": "^4.0.0",
-    "ignore-walk": "^7.0.0",
+    "ignore": "^6.0.2",
     "zod": "^3.23.8"
   },
   "packageManager": "pnpm@9.15.0+sha512.76e2379760a4328ec4415815bcd6628dee727af3779aaa4c914e3944156c4299921a89f976381ee107d41f12cfa4b66681ca9c718f0668fa0831ed4c6d8ba56c"

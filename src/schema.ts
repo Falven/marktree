@@ -11,9 +11,11 @@ export type WorkerRequestType = z.infer<typeof WorkerRequestTypeSchema>;
 
 export const WorkerRequestSchema = z.object({
   type: WorkerRequestTypeSchema,
-  path: z.string(),
+  selectedPath: z.string(),
   workspaceRoot: z.string(),
-  gitignore: z.boolean().optional(),
+  ignoreFiles: z.array(z.string()),
+  additionalIgnores: z.array(z.string()),
+  ignoreBinary: z.boolean().optional(),
 });
 export type WorkerRequest = z.infer<typeof WorkerRequestSchema>;
 
@@ -22,6 +24,7 @@ export type WorkerRequest = z.infer<typeof WorkerRequestSchema>;
 const FileResultSchema = z.object({
   file: z.string(),
   content: z.string().nullable(),
+  isBinary: z.boolean().optional(),
   error: z.string().optional(),
 });
 export type FileResult = z.infer<typeof FileResultSchema>;

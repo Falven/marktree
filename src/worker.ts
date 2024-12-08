@@ -1,62 +1,71 @@
 import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { workerData } from 'node:worker_threads';
+import { WorkerRequestSchema } from './schema.js';
 import { buildMarkdownContent } from './utils/markdown.js';
 import { scanDirectory } from './utils/scanner.js';
 
 (async () => {
-  const args = process.argv.slice(2);
-  // Expecting args: <type> <path> <workspaceRoot> <gitignore>
-  if (args.length < 4) {
-    console.error('Not enough arguments provided.');
-    process.exit(1);
+  const validation = WorkerRequestSchema.safeParse(workerData);
+  if (!validation.success) {
+    throw new Error(`Invalid WorkerRequest: ${validation.error.message}`);
   }
+  const {
+    type,
+    selectedPath,
+    workspaceRoot,
+    ignoreFiles,
+    ignoreBinary,
+    additionalIgnores,
+  } = validation.data;
 
-  const [type, dirPath, workspaceRoot, gitignoreStr] = args;
-  const gitignore = gitignoreStr === 'true';
+  const [
+    { treeLines, files },
+    { default: clipboardy },
+    { default: binaryExtensions },
+  ] = await Promise.all([
+    scanDirectory(selectedPath, workspaceRoot, ignoreFiles, additionalIgnores),
+    import('clipboardy'),
+    import('binary-extensions'),
+  ]);
 
-  try {
-    const { treeLines, files } = await scanDirectory(
-      dirPath,
-      workspaceRoot,
-      gitignore ? ['.gitignore'] : []
+  let markdown = '';
+  if (type === 'tree') {
+    markdown = buildMarkdownContent([], undefined, treeLines);
+  } else {
+    const binaryExtensionsSet = ignoreBinary
+      ? new Set(binaryExtensions)
+      : undefined;
+
+    const fileResults = await Promise.all(
+      files.map(async file => {
+        try {
+          if (binaryExtensionsSet) {
+            const ext = path.extname(file).toLowerCase().slice(1);
+            if (binaryExtensionsSet.has(ext)) {
+              // Known binary extension, don't read it; just mark it as binary
+              return { file, content: null, isBinary: true };
+            }
+          }
+
+          const content = await fs.promises.readFile(file, 'utf-8');
+          return { file, content };
+        } catch (err: any) {
+          return { file, content: null, error: err.message };
+        }
+      })
     );
 
-    const { default: clipboardy } = await import('clipboardy');
-
-    let markdown = '';
-
-    if (type === 'tree') {
-      markdown = buildMarkdownContent([], undefined, treeLines);
-    } else {
-      const fileResults = await Promise.all(
-        files.map(async file => {
-          try {
-            const content = await fs.promises.readFile(file, 'utf-8');
-            return { file, content };
-          } catch (err: any) {
-            return { file, content: null, error: err.message };
-          }
-        })
-      );
-
-      if (type === 'readFiles') {
-        markdown = buildMarkdownContent(fileResults, dirPath);
-      } else if (type === 'treeAndReadFiles') {
-        markdown = buildMarkdownContent(fileResults, dirPath, treeLines);
-      } else {
-        console.error(`Invalid request type: ${type}`);
-        process.exit(1);
-      }
+    if (type === 'readFiles') {
+      markdown = buildMarkdownContent(fileResults, selectedPath);
+    } else if (type === 'treeAndReadFiles') {
+      markdown = buildMarkdownContent(fileResults, selectedPath, treeLines);
     }
-
-    if (!markdown) {
-      console.error('No content to copy.');
-      process.exit(1);
-    }
-
-    await clipboardy.write(markdown);
-    process.exit(0);
-  } catch (err: any) {
-    console.error(err.message || String(err));
-    process.exit(1);
   }
+
+  if (!markdown) {
+    throw new Error('No Markdown content to copy.');
+  }
+
+  await clipboardy.write(markdown);
 })();

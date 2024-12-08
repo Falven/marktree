@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { Worker } from 'node:worker_threads';
 import * as vscode from 'vscode';
 import { type WorkerRequest } from '../schema.js';
 
@@ -7,47 +7,32 @@ export const runInWorker = (
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
 ): Promise<void> => {
-  // Convert payload into arguments
-  // For example, we can pass:
-  //   worker.js <type> <path> <workspaceRoot> <gitignore>
-  // Where gitignore is 'true' or 'false'
-  const { type, path, workspaceRoot, gitignore } = payload;
-
   const workerPath = context.asAbsolutePath('out/worker.js');
-  const args = [
-    workerPath,
-    type,
-    path,
-    workspaceRoot,
-    gitignore ? 'true' : 'false',
-  ];
-
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, args, {
-      stdio: ['ignore', 'ignore', 'pipe'],
-      detached: true,
+    const worker = new Worker(workerPath, {
+      workerData: payload,
     });
 
-    outputChannel.appendLine(`Spawned worker with PID: ${child.pid}`);
+    const { threadId } = worker;
+    const { type } = payload;
+    outputChannel.appendLine(
+      `Worker thread type: ${type}, tid: ${threadId} started.`
+    );
 
-    // Note: We could read child.stderr if we want to show error messages.
-    let errorMessage = '';
-    child.stderr.setEncoding('utf-8');
-    child.stderr.on('data', data => {
-      errorMessage += data;
+    worker.once('error', async err => {
+      outputChannel.appendLine(
+        `Worker thread type: ${type}, tid: ${threadId} encountered an error: ${err.message}`
+      );
+      await worker.terminate();
+      reject(err);
     });
 
-    child.on('error', error => {
-      reject(new Error(`Worker process error: ${error.message}`));
-    });
-
-    child.on('close', code => {
-      if (code === 0) {
-        resolve();
-      } else {
-        const msg = errorMessage.trim() || `Worker exited with code: ${code}`;
-        reject(new Error(msg));
-      }
+    worker.once('exit', async code => {
+      outputChannel.appendLine(
+        `Worker thread type: ${type}, tid: ${threadId} exited with code ${code}.`
+      );
+      await worker.terminate();
+      resolve();
     });
   });
 };
