@@ -9,14 +9,17 @@ export const activate = async (
 ): Promise<void> => {
   outputChannel = vscode.window.createOutputChannel('MarkTree');
 
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (!workspaceFolders || workspaceFolders.length === 0) {
-    outputChannel.appendLine('No workspace folder found.');
-    return;
+  const config = vscode.workspace.getConfiguration('marktree');
+  const gitignoreEnabled = config.get<boolean>('gitignore', true);
+  if (gitignoreEnabled) {
+    context.globalState.update(
+      'marktree.ignoredPaths',
+      await initializeIgnore(outputChannel)
+    );
   }
 
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration(e => {
+    vscode.workspace.onDidChangeConfiguration(async e => {
       if (e.affectsConfiguration('marktree.gitignore')) {
         const updatedConfig = vscode.workspace.getConfiguration('marktree');
         const updatedGitignoreEnabled = updatedConfig.get<boolean>(
@@ -24,10 +27,9 @@ export const activate = async (
           true
         );
 
-        initializeIgnore(
-          workspaceFolders[0].uri.fsPath,
-          updatedGitignoreEnabled,
-          outputChannel
+        context.globalState.update(
+          'marktree.ignoredPaths',
+          await initializeIgnore(outputChannel)
         );
 
         outputChannel.appendLine(
@@ -35,15 +37,6 @@ export const activate = async (
         );
       }
     })
-  );
-
-  const config = vscode.workspace.getConfiguration('marktree');
-  const gitignoreEnabled = config.get<boolean>('gitignore', true);
-
-  await initializeIgnore(
-    workspaceFolders[0].uri.fsPath,
-    gitignoreEnabled,
-    outputChannel
   );
 
   await registerCommands(context, outputChannel);
