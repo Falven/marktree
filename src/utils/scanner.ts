@@ -32,15 +32,10 @@ export const scanDirectory = async (
     parentPatterns
   );
 
-  parentPatterns.push(...additionalIgnores);
+  parentPatterns.push(additionalIgnores.join('\n'));
 
   const dirMap = new Map<string, ScanEntry>();
-  await iterativeGatherEntries(
-    absDirectory,
-    parentPatterns,
-    dirMap,
-    ignoreFiles
-  );
+  await gatherEntries(absDirectory, parentPatterns, dirMap, ignoreFiles);
 
   const treeLines: string[] = [absDirectory];
   const files: string[] = [];
@@ -160,7 +155,7 @@ const readIgnoreFiles = async (
   return contents;
 };
 
-const iterativeGatherEntries = async (
+const gatherEntries = async (
   startDir: string,
   parentPatterns: string[],
   dirMap: Map<string, ScanEntry>,
