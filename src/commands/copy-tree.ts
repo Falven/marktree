@@ -30,10 +30,9 @@ export const copyMdTree =
         action: 'scanDirectory',
         dir: uri.fsPath,
         workspaceRoot: workspaceFolders[0].uri.fsPath,
-        ignoredPaths: context.globalState.get<Set<string> | undefined>(
-          'marktree.ignoredPaths',
-          undefined
-        ),
+        gitignore: vscode.workspace
+          .getConfiguration('marktree')
+          .get<boolean>('gitignore', true),
       };
       const { treeLines } = await runInWorker<ScanDirectoryResult>(
         payload,

@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import walk from 'ignore-walk';
 import { scanDirectory } from './scanner.js';
 import {
   type FileResult,
@@ -31,13 +32,25 @@ process.stdin.on('data', async (data: string) => {
   }
 
   const actionMessage = parseResult.data;
+
+  const { action, workspaceRoot, gitignore } = actionMessage;
+
+  const ignoredPaths = gitignore
+    ? new Set(
+        await walk({
+          path: actionMessage.workspaceRoot,
+          ignoreFiles: ['.gitignore'],
+        })
+      )
+    : undefined;
+
   try {
-    if (actionMessage.action === 'scanDirectory') {
-      const { dir, workspaceRoot } = actionMessage;
+    if (action === 'scanDirectory') {
+      const { dir } = actionMessage;
       const { treeLines, files } = await scanDirectory(
         dir,
         workspaceRoot,
-        actionMessage.ignoredPaths
+        ignoredPaths
       );
       const result: ScanDirectoryResult = {
         type: 'scanDirectory',
@@ -45,7 +58,7 @@ process.stdin.on('data', async (data: string) => {
         files,
       };
       process.stdout.write(JSON.stringify(result) + '\n');
-    } else if (actionMessage.action === 'readFiles') {
+    } else if (action === 'readFiles') {
       const { files } = actionMessage;
       const results = await readFiles(files);
       const result: ReadFilesResult = {
@@ -53,12 +66,13 @@ process.stdin.on('data', async (data: string) => {
         results,
       };
       process.stdout.write(JSON.stringify(result) + '\n');
-    } else if (actionMessage.action === 'scanAndReadDirectory') {
-      const { dir, workspaceRoot } = actionMessage;
+    } else if (action === 'scanAndReadDirectory') {
+      const { dir } = actionMessage;
+
       const { treeLines, files } = await scanDirectory(
         dir,
         workspaceRoot,
-        actionMessage.ignoredPaths
+        ignoredPaths
       );
       const fileResults = await readFiles(files);
       const result: ScanAndReadDirectoryResult = {

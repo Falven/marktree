@@ -10,7 +10,7 @@ import type {
   ScanDirectoryResult,
 } from '../schema.js';
 
-export const registerCopyMdContents =
+export const copyMdContents =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async (uri: vscode.Uri) => {
     if (!uri) {
@@ -38,10 +38,9 @@ export const registerCopyMdContents =
         action: 'scanDirectory',
         dir: uri.fsPath,
         workspaceRoot: workspaceFolders[0].uri.fsPath,
-        ignoredPaths: context.globalState.get<Set<string> | undefined>(
-          'marktree.ignoredPaths',
-          undefined
-        ),
+        gitignore: vscode.workspace
+          .getConfiguration('marktree')
+          .get<boolean>('gitignore', true),
       };
       const { files: scannedFiles } = await runInWorker<ScanDirectoryResult>(
         payload,
@@ -61,10 +60,9 @@ export const registerCopyMdContents =
         action: 'readFiles',
         files,
         workspaceRoot: workspaceFolders[0].uri.fsPath,
-        ignoredPaths: context.globalState.get<Set<string> | undefined>(
-          'marktree.ignoredPaths',
-          undefined
-        ),
+        gitignore: vscode.workspace
+          .getConfiguration('marktree')
+          .get<boolean>('gitignore', true),
       };
       const results = await runInWorker<ReadFilesResult>(
         payload,

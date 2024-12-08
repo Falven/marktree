@@ -37,10 +37,9 @@ export const copyMdTreeAndContents =
         action: 'scanAndReadDirectory',
         dir: uri.fsPath,
         workspaceRoot: workspaceFolders[0].uri.fsPath,
-        ignoredPaths: context.globalState.get<Set<string> | undefined>(
-          'marktree.ignoredPaths',
-          undefined
-        ),
+        gitignore: vscode.workspace
+          .getConfiguration('marktree')
+          .get<boolean>('gitignore', true),
       };
       const { treeLines, files, fileResults } =
         await runInWorker<ScanAndReadDirectoryResult>(
@@ -82,10 +81,9 @@ export const copyMdTreeAndContents =
         action: 'readFiles',
         files: [uri.fsPath],
         workspaceRoot: workspaceFolders[0].uri.fsPath,
-        ignoredPaths: context.globalState.get<Set<string> | undefined>(
-          'marktree.ignoredPaths',
-          undefined
-        ),
+        gitignore: vscode.workspace
+          .getConfiguration('marktree')
+          .get<boolean>('gitignore', true),
       };
       const { results } = await runInWorker<ReadFilesResult>(
         payload,

@@ -1,11 +1,49 @@
 import { z } from 'zod';
 
+// Action Types and Schemas
+
 const WorkerActionTypeSchema = z.enum([
   'scanDirectory',
   'readFiles',
   'scanAndReadDirectory',
 ]);
 export type WorkerActionType = z.infer<typeof WorkerActionTypeSchema>;
+
+const BaseActionSchema = z.object({
+  action: WorkerActionTypeSchema,
+  workspaceRoot: z.string(),
+  gitignore: z.boolean(),
+});
+export type WorkerAction = z.infer<typeof BaseActionSchema>;
+
+const ScanDirectoryActionSchema = BaseActionSchema.extend({
+  action: z.literal('scanDirectory'),
+  dir: z.string(),
+});
+export type ScanDirectoryAction = z.infer<typeof ScanDirectoryActionSchema>;
+
+const ReadFilesActionSchema = BaseActionSchema.extend({
+  action: z.literal('readFiles'),
+  files: z.array(z.string()),
+});
+export type ReadFilesAction = z.infer<typeof ReadFilesActionSchema>;
+
+const ScanAndReadDirectoryActionSchema = BaseActionSchema.extend({
+  action: z.literal('scanAndReadDirectory'),
+  dir: z.string(),
+});
+export type ScanAndReadDirectoryAction = z.infer<
+  typeof ScanAndReadDirectoryActionSchema
+>;
+
+const WorkerActionsSchema = z.union([
+  ScanDirectoryActionSchema,
+  ReadFilesActionSchema,
+  ScanAndReadDirectoryActionSchema,
+]);
+export type WorkerActions = z.infer<typeof WorkerActionsSchema>;
+
+// Result Types and Schemas
 
 const WorkerResultSchema = z.object({
   type: WorkerActionTypeSchema,
@@ -24,11 +62,13 @@ const ScanDirectoryResultSchema = WorkerResultSchema.extend({
   treeLines: z.array(z.string()),
   files: z.array(z.string()),
 });
+export type ScanDirectoryResult = z.infer<typeof ScanDirectoryResultSchema>;
 
 const ReadFilesResultSchema = WorkerResultSchema.extend({
   type: z.literal('readFiles'),
   results: z.array(FileResultSchema),
 });
+export type ReadFilesResult = z.infer<typeof ReadFilesResultSchema>;
 
 const ScanAndReadDirectoryResultSchema = WorkerResultSchema.extend({
   type: z.literal('scanAndReadDirectory'),
@@ -36,10 +76,14 @@ const ScanAndReadDirectoryResultSchema = WorkerResultSchema.extend({
   files: z.array(z.string()),
   fileResults: z.array(FileResultSchema),
 });
+export type ScanAndReadDirectoryResult = z.infer<
+  typeof ScanAndReadDirectoryResultSchema
+>;
 
 const WorkerErrorResultSchema = z.object({
   error: z.string(),
 });
+export type WorkerErrorResult = z.infer<typeof WorkerErrorResultSchema>;
 
 const WorkerResultsSchema = z.union([
   ScanDirectoryResultSchema,
@@ -47,51 +91,12 @@ const WorkerResultsSchema = z.union([
   ScanAndReadDirectoryResultSchema,
   WorkerErrorResultSchema,
 ]);
-
-export type ScanDirectoryResult = z.infer<typeof ScanDirectoryResultSchema>;
-export type ReadFilesResult = z.infer<typeof ReadFilesResultSchema>;
-export type ScanAndReadDirectoryResult = z.infer<
-  typeof ScanAndReadDirectoryResultSchema
->;
-export type WorkerErrorResult = z.infer<typeof WorkerErrorResultSchema>;
 export type WorkerResults = z.infer<typeof WorkerResultsSchema>;
 
-const BaseActionSchema = z.object({
-  action: WorkerActionTypeSchema,
-  workspaceRoot: z.string(),
-  ignoredPaths: z.set(z.string()).optional(),
-});
-
-const ScanDirectoryActionSchema = BaseActionSchema.extend({
-  action: z.literal('scanDirectory'),
-  dir: z.string(),
-});
-
-const ReadFilesActionSchema = BaseActionSchema.extend({
-  action: z.literal('readFiles'),
-  files: z.array(z.string()),
-});
-
-const ScanAndReadDirectoryActionSchema = BaseActionSchema.extend({
-  action: z.literal('scanAndReadDirectory'),
-  dir: z.string(),
-});
-
-const WorkerActionsSchema = z.union([
-  ScanDirectoryActionSchema,
-  ReadFilesActionSchema,
-  ScanAndReadDirectoryActionSchema,
-]);
-
-export type WorkerAction = z.infer<typeof BaseActionSchema>;
-export type ScanDirectoryAction = z.infer<typeof ScanDirectoryActionSchema>;
-export type ReadFilesAction = z.infer<typeof ReadFilesActionSchema>;
-export type ScanAndReadDirectoryAction = z.infer<
-  typeof ScanAndReadDirectoryActionSchema
->;
-export type WorkerActions = z.infer<typeof WorkerActionsSchema>;
+// Exporting Schemas
 
 export {
+  BaseActionSchema,
   FileResultSchema,
   ReadFilesActionSchema,
   ReadFilesResultSchema,

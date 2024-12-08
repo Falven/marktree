@@ -7,11 +7,11 @@ import {
   type WorkerResults,
 } from './schema.js';
 
-export function runInWorker<T extends WorkerResults>(
+export const runInWorker = <T extends WorkerResults>(
   payload: WorkerActions,
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
-): Promise<T> {
+): Promise<T> => {
   const payloadCheck = WorkerActionsSchema.safeParse(payload);
   if (!payloadCheck.success) {
     return Promise.reject(
@@ -22,7 +22,7 @@ export function runInWorker<T extends WorkerResults>(
   return new Promise((resolve, reject) => {
     const workerPath = context.asAbsolutePath('out/worker.js');
 
-    const child = spawn(process.execPath, [workerPath], {
+    const child = spawn(process.execPath, ['--inspect-brk', workerPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
       detached: true,
     });
@@ -81,4 +81,4 @@ export function runInWorker<T extends WorkerResults>(
 
     child.stdin.write(JSON.stringify(payload) + '\n');
   });
-}
+};
