@@ -12,13 +12,6 @@ import { runInWorker } from '../utils/run-in-worker.js';
 export const copyMdTreeAndFiles =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async (uri: vscode.Uri) => {
-    if (!uri) {
-      const message = 'No file or folder selected.';
-      outputChannel.appendLine(message);
-      vscode.window.showErrorMessage(message);
-      return;
-    }
-
     const showCopyingMsg = vscode.workspace
       .getConfiguration('marktree')
       .get<boolean>('showCopyingMessage', DEFAULT_SHOW_COPYING_MSG);
@@ -37,13 +30,14 @@ export const copyMdTreeAndFiles =
       vscode.window.showErrorMessage(message);
       return;
     }
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
     try {
       await runInWorker(
         {
           type: 'treeAndReadFiles',
-          selectedPath: uri.fsPath,
-          workspaceRoot: workspaceFolders[0].uri.fsPath,
+          selectedPath: uri.fsPath ?? workspaceRoot,
+          workspaceRoot: workspaceRoot,
           ignoreFiles: vscode.workspace
             .getConfiguration('marktree')
             .get<boolean>('gitignore', DEFAULT_GITIGNORE)
