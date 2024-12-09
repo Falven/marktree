@@ -12,22 +12,25 @@ type ScanEntry = {
   files: string[];
 };
 
-export const scanDirectory = async (
-  absDirectory: string,
+export const scan = async (
+  absPath: string,
   absWorkspaceRoot: string,
   ignoreFiles: string[],
   additionalIgnores: string[]
 ): Promise<ScanResult> => {
-  if (!absDirectory.startsWith(absWorkspaceRoot)) {
+  if (!absPath.startsWith(absWorkspaceRoot)) {
     throw new Error(
-      `The directory ${absDirectory} is not inside workspaceRoot ${absWorkspaceRoot}`
+      `The directory ${absPath} is not inside workspaceRoot ${absWorkspaceRoot}`
     );
   }
+
+  const stat = await fs.promises.stat(absPath);
+  const isDirectory = stat.isDirectory();
 
   const parentPatterns: string[] = [];
   await accumulatePatternsUpTo(
     absWorkspaceRoot,
-    absDirectory,
+    absPath,
     ignoreFiles,
     parentPatterns
   );
@@ -35,14 +38,16 @@ export const scanDirectory = async (
   parentPatterns.push(additionalIgnores.join('\n'));
 
   const dirMap = new Map<string, ScanEntry>();
-  await gatherEntries(absDirectory, parentPatterns, dirMap, ignoreFiles);
 
-  const treeLines: string[] = [absDirectory];
+  if (isDirectory) {
+    await gatherEntries(absPath, parentPatterns, dirMap, ignoreFiles);
+  } else {
+    dirMap.set(absPath, { dirs: [], files: [] });
+  }
+
+  const treeLines: string[] = [absPath];
   const files: string[] = [];
-  const visited = new Set<string>([absDirectory]);
-
-  let dirsCount = 1;
-  let filesCount = 0;
+  const visited = new Set<string>([absPath]);
 
   const buildEntriesForDir = (
     dir: string
@@ -57,21 +62,24 @@ export const scanDirectory = async (
     ];
   };
 
-  type Frame = {
-    dir: string;
-    entries: { name: string; isDir: boolean }[];
-    index: number;
-    prefix: string;
-  };
-
-  const stack: Frame[] = [
+  const stack = [
     {
-      dir: absDirectory,
-      entries: buildEntriesForDir(absDirectory),
+      dir: absPath,
+      entries: buildEntriesForDir(absPath),
       index: 0,
       prefix: '',
     },
   ];
+
+  let dirsCount = isDirectory ? 1 : 0;
+
+  let filesCount;
+  if (!isDirectory) {
+    filesCount = 1;
+    files.push(absPath);
+  } else {
+    filesCount = 0;
+  }
 
   while (stack.length > 0) {
     const frame = stack[stack.length - 1];

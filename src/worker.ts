@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { workerData } from 'node:worker_threads';
 import { WorkerRequestSchema } from './schema.js';
 import { buildMarkdownContent } from './utils/markdown.js';
-import { scanDirectory } from './utils/scanner.js';
+import { scan } from './utils/scanner.js';
 
 (async () => {
   const validation = WorkerRequestSchema.safeParse(workerData);
@@ -24,7 +24,7 @@ import { scanDirectory } from './utils/scanner.js';
     { default: clipboardy },
     { default: binaryExtensions },
   ] = await Promise.all([
-    scanDirectory(selectedPath, workspaceRoot, ignoreFiles, additionalIgnores),
+    scan(selectedPath, workspaceRoot, ignoreFiles, additionalIgnores),
     import('clipboardy'),
     import('binary-extensions'),
   ]);

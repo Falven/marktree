@@ -14,7 +14,7 @@ export function buildMarkdownContent(
 
   return fileResults.reduce((markdown, result) => {
     const displayPath = basePath
-      ? path.relative(basePath, result.file)
+      ? path.relative(basePath, result.file) || path.basename(result.file)
       : path.basename(result.file);
 
     if (result.isBinary) {
