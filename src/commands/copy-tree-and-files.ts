@@ -36,7 +36,7 @@ export const copyMdTreeAndFiles =
       await runInWorker(
         {
           type: 'treeAndReadFiles',
-          selectedPath: uri.fsPath ?? workspaceRoot,
+          selectedPath: uri?.fsPath ?? workspaceRoot,
           workspaceRoot: workspaceRoot,
           ignoreFiles: vscode.workspace
             .getConfiguration('marktree')
@@ -55,7 +55,8 @@ export const copyMdTreeAndFiles =
       );
     } catch (err) {
       if (err instanceof Error) {
-        outputChannel.appendLine(err.message);
+        const errorMessage = err.stack ?? err.message;
+        outputChannel.appendLine(errorMessage);
         vscode.window.showErrorMessage(
           'Error copying the Markdown directory tree and file contents. See output for details.'
         );

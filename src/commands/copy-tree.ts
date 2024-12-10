@@ -54,7 +54,8 @@ export const copyMdTree =
       );
     } catch (err) {
       if (err instanceof Error) {
-        outputChannel.appendLine(err.message);
+        const errorMessage = err.stack ?? err.message;
+        outputChannel.appendLine(errorMessage);
         vscode.window.showErrorMessage(
           'Error copying the Markdown directory tree. See output for details.'
         );
