@@ -90,6 +90,11 @@
           "default": true,
           "description": "Show the 'Copy Md Tree & Files' command in the context menu."
         },
+        "marktree.showCopyAdvancedCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 'Copy Md Advanced' command in the context menu."
+        },
         "marktree.showCopyingMessage": {
           "type": "boolean",
           "default": false,
@@ -119,6 +124,11 @@
         "category": "MarkTree"
       },
       {
+        "command": "extension.copyMdAdvanced",
+        "title": "Copy Advanced",
+        "category": "MarkTree"
+      },
+      {
         "command": "extension.copyActiveFileMd",
         "title": "Copy Active File as Markdown",
         "category": "MarkTree"
@@ -140,6 +150,11 @@
           "command": "extension.copyMdTreeAndFiles",
           "group": "7_marktree@3",
           "when": "config.marktree.showTreeAndFilesCommand"
+        },
+        {
+          "command": "extension.copyMdAdvanced",
+          "group": "7_marktree@4",
+          "when": "config.marktree.showCopyAdvancedCommand"
         }
       ]
     }
