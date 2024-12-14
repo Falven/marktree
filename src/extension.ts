@@ -3,6 +3,7 @@ import { copyActiveFileMd } from './commands/copy-active-file.js';
 import { copyMdFiles } from './commands/copy-files.js';
 import { copyMdTreeAndFiles } from './commands/copy-tree-and-files.js';
 import { copyMdTree } from './commands/copy-tree.js';
+import { updateMDIgnores } from './commands/update-md-ignores.js';
 
 let outputChannel: vscode.OutputChannel;
 
@@ -33,6 +34,18 @@ export const activate = async (
     vscode.commands.registerCommand(
       'extension.copyActiveFileMd',
       copyActiveFileMd(context, outputChannel)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.addToMDIgnores',
+      updateMDIgnores(outputChannel, false)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.removeFromMDIgnores',
+      updateMDIgnores(outputChannel, true)
     )
   );
 

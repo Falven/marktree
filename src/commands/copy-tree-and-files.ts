@@ -12,9 +12,11 @@ import { runInWorker } from '../utils/run-in-worker.js';
 export const copyMdTreeAndFiles =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async (uri: vscode.Uri) => {
-    const showCopyingMsg = vscode.workspace
-      .getConfiguration('marktree')
-      .get<boolean>('showCopyingMessage', DEFAULT_SHOW_COPYING_MSG);
+    const config = vscode.workspace.getConfiguration('marktree');
+    const showCopyingMsg = config.get<boolean>(
+      'showCopyingMessage',
+      DEFAULT_SHOW_COPYING_MSG
+    );
 
     let message =
       'Copying directory tree and file contents to clipboard as Markdown.';
@@ -38,17 +40,17 @@ export const copyMdTreeAndFiles =
           type: 'treeAndReadFiles',
           selectedPath: uri?.fsPath ?? workspaceRoot,
           workspaceRoot: workspaceRoot,
-          ignoreFiles: vscode.workspace
-            .getConfiguration('marktree')
-            .get<boolean>('gitignore', DEFAULT_GITIGNORE)
+          ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
             ? DEFAULT_IGNORE_FILES
             : [],
-          ignoreBinary: vscode.workspace
-            .getConfiguration('marktree')
-            .get<boolean>('ignoreBinary', DEFAULT_IGNORE_BINARY),
-          additionalIgnores: vscode.workspace
-            .getConfiguration('marktree')
-            .get<string[]>('additionalIgnores', DEFAULT_ADDITIONAL_IGNORES),
+          ignoreBinary: config.get<boolean>(
+            'ignoreBinary',
+            DEFAULT_IGNORE_BINARY
+          ),
+          additionalIgnores: config.get<string[]>(
+            'additionalIgnores',
+            DEFAULT_ADDITIONAL_IGNORES
+          ),
         },
         context,
         outputChannel
@@ -64,9 +66,10 @@ export const copyMdTreeAndFiles =
       return;
     }
 
-    const showCopiedMsg = vscode.workspace
-      .getConfiguration('marktree')
-      .get<boolean>('showCopiedMessage', DEFAULT_SHOW_COPIED_MSG);
+    const showCopiedMsg = config.get<boolean>(
+      'showCopiedMessage',
+      DEFAULT_SHOW_COPIED_MSG
+    );
 
     message =
       'Directory tree and file contents copied to clipboard as Markdown.';

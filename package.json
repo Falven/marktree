@@ -26,7 +26,7 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -42,12 +42,14 @@
         "marktree.gitignore": {
           "type": "boolean",
           "default": true,
-          "description": "If enabled, MarkTree will ignore entries from your workspace .gitignores."
+          "description": "If enabled, MarkTree will ignore entries from your workspace .gitignores.",
+          "order": 10
         },
         "marktree.ignoreBinary": {
           "type": "boolean",
           "default": true,
-          "description": "If enabled, MarkTree will not copy the contents of binary files."
+          "description": "If enabled, MarkTree will not copy the contents of binary files.",
+          "order": 20
         },
         "marktree.additionalIgnores": {
           "type": "array",
@@ -73,32 +75,56 @@
             ".gitattributes",
             ".mailmap"
           ],
-          "description": "A list of additional .gitignore entries to ignore. Defaults to ['.gitignore', 'yarn.lock', 'pnpm-lock.yaml', 'package-lock.json']."
+          "description": "A list of additional .gitignore entries to ignore. Defaults to ['.gitignore', 'yarn.lock', 'pnpm-lock.yaml', 'package-lock.json'].",
+          "order": 30
         },
         "marktree.showTreeCommand": {
           "type": "boolean",
           "default": true,
-          "description": "Show the 'Copy Md Tree' command in the context menu."
+          "description": "Show the 'Copy Md Tree' command in the context menu.",
+          "order": 40
         },
         "marktree.showFilesCommand": {
           "type": "boolean",
           "default": true,
-          "description": "Show the 'Copy Md Files' command in the context menu."
+          "description": "Show the 'Copy Md Files' command in the context menu.",
+          "order": 50
         },
         "marktree.showTreeAndFilesCommand": {
           "type": "boolean",
           "default": true,
-          "description": "Show the 'Copy Md Tree & Files' command in the context menu."
+          "description": "Show the 'Copy Md Tree & Files' command in the context menu.",
+          "order": 60
         },
         "marktree.showCopyingMessage": {
           "type": "boolean",
           "default": false,
-          "description": "Show the informational copying confirmation message."
+          "description": "Show the copying informational message.",
+          "order": 70
         },
         "marktree.showCopiedMessage": {
           "type": "boolean",
           "default": true,
-          "description": "Show the informational copied confirmation message."
+          "description": "Show the copied informational message.",
+          "order": 80
+        },
+        "marktree.showAddToMDIgnoresCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 'Add to MD Ignores' command in the context menu.",
+          "order": 90
+        },
+        "marktree.showRemoveFromMDIgnoresCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 'Remove from MD Ignores' command in the context menu.",
+          "order": 100
+        },
+        "marktree.showUpdatedMDIgnoresMessage": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the copied or removed MD ignores informational message.",
+          "order": 110
         }
       }
     },
@@ -122,6 +148,16 @@
         "command": "extension.copyActiveFileMd",
         "title": "Copy Active File as Markdown",
         "category": "MarkTree"
+      },
+      {
+        "command": "extension.addToMDIgnores",
+        "title": "Add to MD Ignores",
+        "category": "MarkTree"
+      },
+      {
+        "command": "extension.removeFromMDIgnores",
+        "title": "Remove from MD Ignores",
+        "category": "MarkTree"
       }
     ],
     "menus": {
@@ -140,6 +176,16 @@
           "command": "extension.copyMdTreeAndFiles",
           "group": "7_marktree@3",
           "when": "config.marktree.showTreeAndFilesCommand"
+        },
+        {
+          "command": "extension.addToMDIgnores",
+          "group": "7_marktree@4",
+          "when": "config.marktree.showAddToMDIgnoresCommand"
+        },
+        {
+          "command": "extension.removeFromMDIgnores",
+          "group": "7_marktree@5",
+          "when": "config.marktree.showRemoveFromMDIgnoresCommand"
         }
       ]
     }

@@ -24,3 +24,4 @@ export const DEFAULT_ADDITIONAL_IGNORES = [
 ];
 export const DEFAULT_SHOW_COPYING_MSG = false;
 export const DEFAULT_SHOW_COPIED_MSG = true;
+export const DEFAULT_UPDATE_MD_IGNORES_MESSAGE = true;
