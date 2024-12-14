@@ -16,6 +16,7 @@ export const WorkerRequestSchema = z.object({
   ignoreFiles: z.array(z.string()),
   additionalIgnores: z.array(z.string()),
   ignoreBinary: z.boolean().optional(),
+  paths: z.array(z.string()).optional(),
 });
 export type WorkerRequest = z.infer<typeof WorkerRequestSchema>;
 

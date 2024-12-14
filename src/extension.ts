@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { copyActiveFileMd } from './commands/copy-active-file.js';
 import { copyMdFiles } from './commands/copy-files.js';
+import { copyOpenTabsAsMd } from './commands/copy-open-tabs.js';
 import { copyMdTreeAndFiles } from './commands/copy-tree-and-files.js';
 import { copyMdTree } from './commands/copy-tree.js';
 import { updateMDIgnores } from './commands/update-md-ignores.js';
@@ -38,14 +39,20 @@ export const activate = async (
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'extension.addToMDIgnores',
+      'extension.addToMdIgnores',
       updateMDIgnores(outputChannel, false)
     )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'extension.removeFromMDIgnores',
+      'extension.removeFromMdIgnores',
       updateMDIgnores(outputChannel, true)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.copyOpenTabsAsMd',
+      copyOpenTabsAsMd(context, outputChannel)
     )
   );
 

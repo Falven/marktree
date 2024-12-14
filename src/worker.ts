@@ -17,25 +17,38 @@ import { scan } from './utils/scanner.js';
     ignoreFiles,
     ignoreBinary,
     additionalIgnores,
+    paths,
   } = validation.data;
 
-  const [
-    { treeLines, files },
-    { default: clipboardy },
-    { default: binaryExtensions },
-  ] = await Promise.all([
-    scan(selectedPath, workspaceRoot, ignoreFiles, additionalIgnores),
-    import('clipboardy'),
-    import('binary-extensions'),
-  ]);
+  const scanningPromise =
+    type === 'readFiles' && paths && paths.length > 0
+      ? Promise.resolve({ treeLines: [], files: paths })
+      : scan(selectedPath, workspaceRoot, ignoreFiles, additionalIgnores);
 
+  const clipboardyPromise = import('clipboardy');
+
+  const binaryExtensionsPromise =
+    type === 'tree' ? Promise.resolve(null) : import('binary-extensions');
+
+  const [scanResult, { default: clipboardy }, binaryExtensionsModule] =
+    await Promise.all([
+      scanningPromise,
+      clipboardyPromise,
+      binaryExtensionsPromise,
+    ]);
+
+  const { treeLines, files } = scanResult;
   let markdown = '';
+
   if (type === 'tree') {
     markdown = buildMarkdownContent([], undefined, treeLines);
   } else {
-    const binaryExtensionsSet = ignoreBinary
-      ? new Set(binaryExtensions)
+    const binaryExtensions = binaryExtensionsModule
+      ? binaryExtensionsModule.default
       : undefined;
+
+    const binaryExtensionsSet =
+      ignoreBinary && binaryExtensions ? new Set(binaryExtensions) : undefined;
 
     const fileResults = await Promise.all(
       files.map(async file => {
@@ -43,11 +56,9 @@ import { scan } from './utils/scanner.js';
           if (binaryExtensionsSet) {
             const ext = path.extname(file).toLowerCase().slice(1);
             if (binaryExtensionsSet.has(ext)) {
-              // Known binary extension, don't read it; just mark it as binary
               return { file, content: null, isBinary: true };
             }
           }
-
           const content = await fs.promises.readFile(file, 'utf-8');
           return { file, content };
         } catch (err: any) {
