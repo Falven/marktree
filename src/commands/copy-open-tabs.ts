@@ -33,14 +33,15 @@ export const copyOpenTabsAsMd =
     }
     const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
-    // Get all currently visible text editors.
-    const allTabs = vscode.window.tabGroups.all.flatMap(group => group.tabs);
     const fileUris: vscode.Uri[] = [];
-    for (const tab of allTabs) {
-      if (tab.input instanceof vscode.TabInputText) {
-        const doc = tab.input;
-        if (doc.uri.scheme === 'file') {
-          fileUris.push(doc.uri);
+    for (const group of vscode.window.tabGroups.all) {
+      for (const tab of group.tabs) {
+        const input = tab.input;
+        if (
+          input instanceof vscode.TabInputText &&
+          input.uri.scheme === 'file'
+        ) {
+          fileUris.push(input.uri);
         }
       }
     }
