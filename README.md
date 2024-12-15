@@ -29,7 +29,7 @@ If you frequently work with multiple files at once, MarkTree allows you to copy 
 - **Copy Tabs to the Right:** Useful if you want to copy a selection of files opened to the right of the current focus.
 - **Copy Tabs to the Left:** Quickly capture the files you've opened to the left side.
 
-## Example: Copying MD Tree
+## Copying Md Tree
 
 ```sh
 /Users/falven/Source/turborepo/examples/basic/packages/lib
@@ -43,7 +43,7 @@ If you frequently work with multiple files at once, MarkTree allows you to copy 
 
 ![Copy Md Tree](images/copy_md_tree.gif)
 
-## Example: Copying MD Files
+## Copying Md Files
 
 When you copy files, each file's content is formatted as a code block with an automatically detected language:
 
@@ -83,7 +83,7 @@ tsconfig.json
 
 ![Copy Md Files](images/copy_md_files.gif)
 
-### Copy MD Tree & Files Together
+### Copying Md Tree & Files Together
 
 ```sh
 /Users/falven/Source/turborepo/examples/basic/packages/lib
