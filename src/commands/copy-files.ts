@@ -11,7 +11,18 @@ import { runInWorker } from '../utils/run-in-worker.js';
 
 export const copyMdFiles =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
-  async (uri: vscode.Uri) => {
+  async (uri?: vscode.Uri) => {
+    if (!uri) {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (!activeEditor) {
+        vscode.window.showErrorMessage(
+          'No file selected in explorer or active editor.'
+        );
+        return;
+      }
+      uri = activeEditor.document.uri;
+    }
+
     const config = vscode.workspace.getConfiguration('marktree');
     const showCopyingMsg = config.get<boolean>(
       'showCopyingMessage',
@@ -37,7 +48,7 @@ export const copyMdFiles =
       await runInWorker(
         {
           type: 'readFiles',
-          selectedPath: uri?.fsPath ?? workspaceRoot,
+          selectedPath: uri.fsPath,
           workspaceRoot: workspaceRoot,
           ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
             ? DEFAULT_IGNORE_FILES

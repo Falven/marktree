@@ -11,7 +11,18 @@ import { runInWorker } from '../utils/run-in-worker.js';
 
 export const copyMdTreeAndFiles =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
-  async (uri: vscode.Uri) => {
+  async (uri?: vscode.Uri) => {
+    if (!uri) {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (!activeEditor) {
+        vscode.window.showErrorMessage(
+          'No folder or file selected in explorer or active editor.'
+        );
+        return;
+      }
+      uri = activeEditor.document.uri;
+    }
+
     const config = vscode.workspace.getConfiguration('marktree');
     const showCopyingMsg = config.get<boolean>(
       'showCopyingMessage',
@@ -27,9 +38,9 @@ export const copyMdTreeAndFiles =
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
-      const message = 'No workspace folder found.';
-      outputChannel.appendLine(message);
-      vscode.window.showErrorMessage(message);
+      const msg = 'No workspace folder found.';
+      outputChannel.appendLine(msg);
+      vscode.window.showErrorMessage(msg);
       return;
     }
     const workspaceRoot = workspaceFolders[0].uri.fsPath;
@@ -38,7 +49,7 @@ export const copyMdTreeAndFiles =
       await runInWorker(
         {
           type: 'treeAndReadFiles',
-          selectedPath: uri?.fsPath ?? workspaceRoot,
+          selectedPath: uri.fsPath,
           workspaceRoot: workspaceRoot,
           ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
             ? DEFAULT_IGNORE_FILES
