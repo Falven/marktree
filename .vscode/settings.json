@@ -7,5 +7,28 @@
 		"out": true // set this to false to include "out" folder in search results
 	},
 	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-	"typescript.tsc.autoDetect": "off"
+	"typescript.tsc.autoDetect": "off",
+	"marktree.additionalIgnores": [
+		".git",
+		".gitignore",
+		".vscode/",
+		".idea/",
+		".settings/",
+		".vs/",
+		".code-workspace",
+		"yarn.lock",
+		"pnpm-lock.yaml",
+		"package-lock.json",
+		"README.md",
+		"LICENSE",
+		"LICENSE.md",
+		"CHANGELOG.md",
+		"CODE_OF_CONDUCT.md",
+		"CONTRIBUTING.md",
+		"SECURITY.md",
+		".editorconfig",
+		".gitattributes",
+		".mailmap",
+		"icon.pxd"
+	]
 }

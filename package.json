@@ -26,7 +26,7 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -125,6 +125,24 @@
           "default": true,
           "description": "Show the copied or removed MD ignores informational message.",
           "order": 110
+        },
+        "marktree.showCopyTabsAsMdCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 'Copy all tabs as Md' command in the tab context menu.",
+          "order": 120
+        },
+        "marktree.showCopyTabsToTheLeftAsMdCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 'Copy tabs to the left as Md' command in the tab context menu.",
+          "order": 130
+        },
+        "marktree.showCopyTabsToTheRightAsMdCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the 'Copy tabs to the right as Md' command in the tab context menu.",
+          "order": 140
         }
       }
     },
@@ -160,12 +178,39 @@
         "category": "MarkTree"
       },
       {
-        "command": "extension.copyOpenTabsAsMd",
-        "title": "Copy Open Tabs as Md",
+        "command": "extension.copyTabsAsMd",
+        "title": "Copy all tabs as Md",
+        "category": "MarkTree"
+      },
+      {
+        "command": "extension.copyTabsToTheLeftAsMd",
+        "title": "Copy tabs to the left as Md",
+        "category": "MarkTree"
+      },
+      {
+        "command": "extension.copyTabsToTheRightAsMd",
+        "title": "Copy tabs to the right as Md",
         "category": "MarkTree"
       }
     ],
     "menus": {
+      "editor/title/context": [
+        {
+          "command": "extension.copyTabsAsMd",
+          "group": "3_navigation@1",
+          "when": "config.marktree.showCopyTabsAsMdCommand"
+        },
+        {
+          "command": "extension.copyTabsToTheLeftAsMd",
+          "group": "3_navigation@2",
+          "when": "config.marktree.showCopyTabsToTheLeftAsMdCommand"
+        },
+        {
+          "command": "extension.copyTabsToTheRightAsMd",
+          "group": "3_navigation@3",
+          "when": "config.marktree.showCopyTabsToTheRightAsMdCommand"
+        }
+      ],
       "explorer/context": [
         {
           "command": "extension.copyMdTree",

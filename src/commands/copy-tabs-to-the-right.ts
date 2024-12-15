@@ -1,15 +1,16 @@
 import * as vscode from 'vscode';
 import {
-    DEFAULT_ADDITIONAL_IGNORES,
-    DEFAULT_GITIGNORE,
-    DEFAULT_IGNORE_BINARY,
-    DEFAULT_IGNORE_FILES,
-    DEFAULT_SHOW_COPIED_MSG,
-    DEFAULT_SHOW_COPYING_MSG,
+  DEFAULT_ADDITIONAL_IGNORES,
+  DEFAULT_GITIGNORE,
+  DEFAULT_IGNORE_BINARY,
+  DEFAULT_IGNORE_FILES,
+  DEFAULT_SHOW_COPIED_MSG,
+  DEFAULT_SHOW_COPYING_MSG,
 } from '../config.js';
 import { runInWorker } from '../utils/run-in-worker.js';
+import { getFileUrisFromTabs } from '../utils/tab-utils.js';
 
-export const copyOpenTabsAsMd =
+export const copyTabsToTheRightAsMd =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async () => {
     const config = vscode.workspace.getConfiguration('marktree');
@@ -18,40 +19,23 @@ export const copyOpenTabsAsMd =
       DEFAULT_SHOW_COPYING_MSG
     );
 
-    let message = 'Copying open tabs as Markdown.';
+    let message = 'Copying open tabs to the right as Markdown.';
     outputChannel.appendLine(message);
     if (showCopyingMsg) {
       vscode.window.showInformationMessage(message);
     }
 
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      const message = 'No workspace folder found.';
-      outputChannel.appendLine(message);
-      vscode.window.showErrorMessage(message);
-      return;
-    }
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
-
-    const fileUris: vscode.Uri[] = [];
-    for (const group of vscode.window.tabGroups.all) {
-      for (const tab of group.tabs) {
-        const input = tab.input;
-        if (
-          input instanceof vscode.TabInputText &&
-          input.uri.scheme === 'file'
-        ) {
-          fileUris.push(input.uri);
-        }
-      }
-    }
-
-    if (fileUris.length === 0) {
-      const msg = 'No file-based open tabs to copy.';
+    let fileUris: vscode.Uri[];
+    try {
+      fileUris = await getFileUrisFromTabs('right');
+    } catch (err: any) {
+      const msg = err.message || String(err);
       outputChannel.appendLine(msg);
       vscode.window.showErrorMessage(msg);
       return;
     }
+
+    const workspaceRoot = vscode.workspace.workspaceFolders![0].uri.fsPath;
 
     try {
       await runInWorker(
@@ -76,22 +60,18 @@ export const copyOpenTabsAsMd =
         outputChannel
       );
     } catch (err) {
-      if (err instanceof Error) {
-        const errorMessage = err.stack ?? err.message;
-        outputChannel.appendLine(errorMessage);
-        vscode.window.showErrorMessage(
-          'Error copying open tabs as Markdown. See output for details.'
-        );
-        return;
-      }
+      const msg =
+        'Error copying open tabs to the right as Markdown. See output for details.';
+      outputChannel.appendLine(String(err));
+      vscode.window.showErrorMessage(msg);
+      return;
     }
 
     const showCopiedMsg = config.get<boolean>(
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG
     );
-
-    message = 'Open tabs copied to clipboard as Markdown.';
+    message = 'Open tabs to the right copied to clipboard as Markdown.';
     outputChannel.appendLine(message);
     if (showCopiedMsg) {
       vscode.window.showInformationMessage(message);

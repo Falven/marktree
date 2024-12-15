@@ -25,3 +25,6 @@ export const DEFAULT_ADDITIONAL_IGNORES = [
 export const DEFAULT_SHOW_COPYING_MSG = false;
 export const DEFAULT_SHOW_COPIED_MSG = true;
 export const DEFAULT_UPDATE_MD_IGNORES_MESSAGE = true;
+// export const DEFAULT_SHOW_COPY_ALL_TABS = true;
+// export const DEFAULT_SHOW_COPY_TABS_TO_THE_LEFT = true;
+// export const DEFAULT_SHOW_COPY_TABS_TO_THE_RIGHT = true;

@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import { copyActiveFileMd } from './commands/copy-active-file.js';
 import { copyMdFiles } from './commands/copy-files.js';
-import { copyOpenTabsAsMd } from './commands/copy-open-tabs.js';
+import { copyTabsToTheLeftAsMd } from './commands/copy-tabs-to-the-left.js';
+import { copyTabsToTheRightAsMd } from './commands/copy-tabs-to-the-right.js';
+import { copyTabsAsMd } from './commands/copy-tabs.js';
 import { copyMdTreeAndFiles } from './commands/copy-tree-and-files.js';
 import { copyMdTree } from './commands/copy-tree.js';
 import { updateMDIgnores } from './commands/update-md-ignores.js';
@@ -51,8 +53,20 @@ export const activate = async (
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'extension.copyOpenTabsAsMd',
-      copyOpenTabsAsMd(context, outputChannel)
+      'extension.copyTabsAsMd',
+      copyTabsAsMd(context, outputChannel)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.copyTabsToTheLeftAsMd',
+      copyTabsToTheLeftAsMd(context, outputChannel)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.copyTabsToTheRightAsMd',
+      copyTabsToTheRightAsMd(context, outputChannel)
     )
   );
 
