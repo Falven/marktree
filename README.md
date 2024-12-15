@@ -40,7 +40,6 @@ If you frequently work with multiple files at once, MarkTree allows you to copy 
 
 2 directories, 3 files
 ```
-````
 
 ![Copy Md Tree](images/copy_md_tree.gif)
 
