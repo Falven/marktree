@@ -42,3 +42,14 @@ export function buildMarkdownContent(
     );
   }, initialMarkdown);
 }
+
+export function buildShellExecContent(
+  execs: { cmd: string; output: string }[]
+): string {
+  const lines = execs.map(({ cmd, output }) => {
+    const trimmedOutput = output.trimEnd();
+    return `$ ${cmd}\n${trimmedOutput}`;
+  });
+
+  return `\`\`\`sh\n${lines.join('\n\n')}\n\`\`\`\n`;
+}

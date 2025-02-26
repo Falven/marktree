@@ -27,3 +27,16 @@ export const WorkerRequestSchema = z.object({
   shellCommands: z.array(ShellCommandSchema).optional(),
 });
 export type WorkerRequest = z.infer<typeof WorkerRequestSchema>;
+
+const FileResultSchema = z.object({
+  file: z.string(),
+  content: z.string().nullable(),
+  isBinary: z.boolean().optional(),
+  error: z.string().optional(),
+});
+export type FileResult = z.infer<typeof FileResultSchema>;
+
+export const WorkerResponseSchema = z.object({
+  error: z.string().optional(),
+});
+export type WorkerResponse = z.infer<typeof WorkerResponseSchema>;

@@ -4,7 +4,10 @@ import * as path from 'node:path';
 import { workerData } from 'node:worker_threads';
 
 import { WorkerRequest, WorkerRequestSchema } from './schema.js';
-import { buildMarkdownContent } from './utils/markdown.js';
+import {
+  buildMarkdownContent,
+  buildShellExecContent,
+} from './utils/markdown.js';
 import { scan } from './utils/scanner.js';
 
 (async () => {
@@ -68,7 +71,6 @@ import { scan } from './utils/scanner.js';
       break;
     }
 
-    // ------------------------------------------------------------------------
     case 'readFiles':
     case 'treeAndReadFiles': {
       const { treeLines, files } = scanResult;
@@ -110,8 +112,7 @@ import { scan } from './utils/scanner.js';
         throw new Error('No shell commands provided for "shellExec".');
       }
 
-      let combined = '';
-      for (const cmd of request.shellCommands) {
+      const results = request.shellCommands.map(cmd => {
         const displayCmd = `${cmd.command} ${cmd.args.join(' ')}`;
         let output = '';
         try {
@@ -120,15 +121,16 @@ import { scan } from './utils/scanner.js';
             encoding: 'utf-8',
           });
         } catch (err: any) {
-          output = `Error: ${err.message || String(err)}`;
+          output = err.message ? err.message : String(err);
         }
-        combined += `\n**Command**: \`${displayCmd}\`\n\n\`\`\`diff\n${output}\n\`\`\`\n`;
-      }
+        return { cmd: displayCmd, output };
+      });
 
-      if (!combined.trim()) {
+      markdown = buildShellExecContent(results);
+
+      if (!markdown.trim()) {
         throw new Error('No output from shellExec commands.');
       }
-      markdown = combined.trim() + '\n';
       break;
     }
   }
