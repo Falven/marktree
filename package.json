@@ -26,7 +26,7 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -87,7 +87,7 @@
         "marktree.showFilesCommand": {
           "type": "boolean",
           "default": true,
-          "description": "Show the 'Copy Md Files' command in the context menu.",
+          "description": "Show the 'Copy Md File(s)' command in the context menu.",
           "order": 50
         },
         "marktree.showTreeAndFilesCommand": {
@@ -154,7 +154,7 @@
       },
       {
         "command": "extension.copyMdFiles",
-        "title": "Copy Md Files",
+        "title": "Copy Md File(s)",
         "category": "MarkTree"
       },
       {
@@ -190,6 +190,11 @@
       {
         "command": "extension.copyTabsToTheRightAsMd",
         "title": "Copy tabs to the right as Md",
+        "category": "MarkTree"
+      },
+      {
+        "command": "extension.copyGitStagedAsMd",
+        "title": "Copy Staged Git Changes as Markdown",
         "category": "MarkTree"
       }
     ],

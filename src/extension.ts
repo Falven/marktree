@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { copyActiveFileMd } from './commands/copy-active-file.js';
 import { copyMdFiles } from './commands/copy-files.js';
+import { copyGitStagedAsMd } from './commands/copy-git-staged.js';
 import { copyTabsToTheLeftAsMd } from './commands/copy-tabs-to-the-left.js';
 import { copyTabsToTheRightAsMd } from './commands/copy-tabs-to-the-right.js';
 import { copyTabsAsMd } from './commands/copy-tabs.js';
@@ -67,6 +68,12 @@ export const activate = async (
     vscode.commands.registerCommand(
       'extension.copyTabsToTheRightAsMd',
       copyTabsToTheRightAsMd(context, outputChannel)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.copyGitStagedAsMd',
+      copyGitStagedAsMd(context, outputChannel)
     )
   );
 
