@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { copyActiveFileMd } from './commands/copy-active-file.js';
 import { copyMdFiles } from './commands/copy-files.js';
-import { copyGitStagedAsMd } from './commands/copy-git-staged.js';
+import { copyGitDiffRangeQuickPick } from './commands/copy-git-diff-range.js';
+import { copyGitDiffStagedAsMd } from './commands/copy-git-diff-staged.js';
 import { copyTabsToTheLeftAsMd } from './commands/copy-tabs-to-the-left.js';
 import { copyTabsToTheRightAsMd } from './commands/copy-tabs-to-the-right.js';
 import { copyTabsAsMd } from './commands/copy-tabs.js';
@@ -73,7 +74,13 @@ export const activate = async (
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyGitStagedAsMd',
-      copyGitStagedAsMd(context, outputChannel)
+      copyGitDiffStagedAsMd(context, outputChannel)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.copyGitDiffRangeQuickPickAsMd',
+      copyGitDiffRangeQuickPick(context, outputChannel)
     )
   );
 

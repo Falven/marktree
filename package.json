@@ -26,7 +26,7 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -34,6 +34,9 @@
     "Other"
   ],
   "main": "./out/extension.js",
+  "extensionDependencies": [
+    "vscode.git"
+  ],
   "contributes": {
     "configuration": {
       "type": "object",
@@ -195,6 +198,11 @@
       {
         "command": "extension.copyGitStagedAsMd",
         "title": "Copy Staged Git Changes as Markdown",
+        "category": "MarkTree"
+      },
+      {
+        "command": "extension.copyGitDiffRangeQuickPickAsMd",
+        "title": "Copy Git Diff Range (QuickPick)",
         "category": "MarkTree"
       }
     ],
