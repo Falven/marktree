@@ -1,12 +1,19 @@
 import { z } from 'zod';
 
-export const WorkerRequestTypeSchema = z.enum([
-  'tree',
-  'readFiles',
-  'treeAndReadFiles',
-  'shellExec',
-]);
-export type WorkerRequestType = z.infer<typeof WorkerRequestTypeSchema>;
+export const FileResultSchema = z.object({
+  file: z.string(),
+  content: z.string().nullable().optional(),
+  isBinary: z.boolean().optional(),
+  error: z.string().optional(),
+});
+export type FileResult = z.infer<typeof FileResultSchema>;
+
+const baseSchema = z.object({
+  workspaceRoot: z.string().nonempty(),
+  ignoreFiles: z.array(z.string()).optional().default([]),
+  additionalIgnores: z.array(z.string()).optional().default([]),
+  ignoreBinary: z.boolean().optional().default(false),
+});
 
 const ShellCommandSchema = z.object({
   command: z.string(),
@@ -14,29 +21,47 @@ const ShellCommandSchema = z.object({
   cwd: z.string().optional(),
 });
 
-export const WorkerRequestSchema = z.object({
-  type: WorkerRequestTypeSchema,
-
-  selectedPath: z.string().optional(),
-  workspaceRoot: z.string().optional(),
-  ignoreFiles: z.array(z.string()).optional(),
-  additionalIgnores: z.array(z.string()).optional(),
-  ignoreBinary: z.boolean().optional(),
-  paths: z.array(z.string()).optional(),
-
-  shellCommands: z.array(ShellCommandSchema).optional(),
+const WorkerRequestTreeSchema = baseSchema.extend({
+  type: z.literal('tree'),
+  selectedPath: z.string().nonempty(),
 });
+
+const WorkerRequestReadFilesPathsSchema = baseSchema.extend({
+  type: z.literal('readFilesPaths'),
+  paths: z.array(z.string()).nonempty(),
+  selectedPath: z.undefined(),
+});
+
+const WorkerRequestReadFilesSelectedSchema = baseSchema.extend({
+  type: z.literal('readFilesSelected'),
+  paths: z.undefined(),
+  selectedPath: z.string().nonempty(),
+});
+
+const WorkerRequestTreeAndReadFilesPathsSchema = baseSchema.extend({
+  type: z.literal('treeAndReadFilesPaths'),
+  paths: z.array(z.string()).nonempty(),
+  selectedPath: z.undefined(),
+});
+
+const WorkerRequestTreeAndReadFilesSelectedSchema = baseSchema.extend({
+  type: z.literal('treeAndReadFilesSelected'),
+  paths: z.undefined(),
+  selectedPath: z.string().nonempty(),
+});
+
+const WorkerRequestShellExecSchema = baseSchema.extend({
+  type: z.literal('shellExec'),
+  shellCommands: z.array(ShellCommandSchema).nonempty(),
+});
+
+export const WorkerRequestSchema = z.discriminatedUnion('type', [
+  WorkerRequestTreeSchema,
+  WorkerRequestReadFilesPathsSchema,
+  WorkerRequestReadFilesSelectedSchema,
+  WorkerRequestTreeAndReadFilesPathsSchema,
+  WorkerRequestTreeAndReadFilesSelectedSchema,
+  WorkerRequestShellExecSchema,
+]);
+
 export type WorkerRequest = z.infer<typeof WorkerRequestSchema>;
-
-const FileResultSchema = z.object({
-  file: z.string(),
-  content: z.string().nullable(),
-  isBinary: z.boolean().optional(),
-  error: z.string().optional(),
-});
-export type FileResult = z.infer<typeof FileResultSchema>;
-
-export const WorkerResponseSchema = z.object({
-  error: z.string().optional(),
-});
-export type WorkerResponse = z.infer<typeof WorkerResponseSchema>;

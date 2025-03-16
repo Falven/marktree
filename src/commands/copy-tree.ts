@@ -12,7 +12,8 @@ import { runInWorker } from '../utils/run-in-worker.js';
 export const copyMdTree =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async (uri?: vscode.Uri) => {
-    if (!uri) {
+    let resolvedUri = uri;
+    if (!resolvedUri) {
       const activeEditor = vscode.window.activeTextEditor;
       if (!activeEditor) {
         vscode.window.showErrorMessage(
@@ -20,7 +21,7 @@ export const copyMdTree =
         );
         return;
       }
-      uri = activeEditor.document.uri;
+      resolvedUri = activeEditor.document.uri;
     }
 
     const config = vscode.workspace.getConfiguration('marktree');
@@ -48,7 +49,7 @@ export const copyMdTree =
       await runInWorker(
         {
           type: 'tree',
-          selectedPath: uri.fsPath,
+          selectedPath: resolvedUri.fsPath,
           workspaceRoot: workspaceRoot,
           ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
             ? DEFAULT_IGNORE_FILES

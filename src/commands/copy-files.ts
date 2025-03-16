@@ -11,16 +11,27 @@ import { runInWorker } from '../utils/run-in-worker.js';
 
 export const copyMdFiles =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
-  async (uri?: vscode.Uri) => {
-    if (!uri) {
-      const activeEditor = vscode.window.activeTextEditor;
-      if (!activeEditor) {
+  async (firstUri?: vscode.Uri, allUris?: vscode.Uri[]) => {
+    let uris: vscode.Uri[] = [];
+
+    if (allUris) {
+      uris = allUris;
+    } else if (firstUri) {
+      uris = [firstUri];
+    } else {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
         vscode.window.showErrorMessage(
-          'No file selected in explorer or active editor.'
+          'No folder selected or no workspace folder found.'
         );
         return;
       }
-      uri = activeEditor.document.uri;
+      uris = [workspaceFolders[0].uri];
+    }
+
+    if (uris.length === 0) {
+      vscode.window.showErrorMessage('No folder or file selected.');
+      return;
     }
 
     const config = vscode.workspace.getConfiguration('marktree');
@@ -28,7 +39,6 @@ export const copyMdFiles =
       'showCopyingMessage',
       DEFAULT_SHOW_COPYING_MSG
     );
-
     let message = 'Copying file contents to clipboard as Markdown.';
     outputChannel.appendLine(message);
     if (showCopyingMsg) {
@@ -37,19 +47,20 @@ export const copyMdFiles =
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
-      const message = 'No workspace folder found.';
-      outputChannel.appendLine(message);
-      vscode.window.showErrorMessage(message);
+      const errorMsg = 'No workspace folder found.';
+      outputChannel.appendLine(errorMsg);
+      vscode.window.showErrorMessage(errorMsg);
       return;
     }
     const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
+    let copiedCount = 0;
     try {
-      await runInWorker(
+      copiedCount = await runInWorker(
         {
-          type: 'readFiles',
-          selectedPath: uri.fsPath,
-          workspaceRoot: workspaceRoot,
+          type: 'readFilesPaths',
+          paths: uris.map(u => u.fsPath) as [string, ...string[]],
+          workspaceRoot,
           ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
             ? DEFAULT_IGNORE_FILES
             : [],
@@ -65,23 +76,31 @@ export const copyMdFiles =
         context,
         outputChannel
       );
-    } catch (err) {
-      if (err instanceof Error) {
-        const errorMessage = err.stack ?? err.message;
+    } catch (unknownErr) {
+      if (unknownErr instanceof Error) {
+        const errorMessage = unknownErr.stack ?? unknownErr.message;
         outputChannel.appendLine(errorMessage);
         vscode.window.showErrorMessage(
           'Error copying the Markdown file contents. See output for details.'
         );
-        return;
+      } else {
+        const errorMessage = String(unknownErr);
+        outputChannel.appendLine(errorMessage);
+        vscode.window.showErrorMessage(
+          'Error copying the Markdown file contents. See output for details.'
+        );
       }
+      return;
     }
 
     const showCopiedMsg = config.get<boolean>(
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG
     );
-
-    message = 'File contents copied to clipboard as Markdown.';
+    message =
+      copiedCount === 1
+        ? '1 file copied to clipboard as Markdown.'
+        : `${copiedCount} files copied to clipboard as Markdown.`;
     outputChannel.appendLine(message);
     if (showCopiedMsg) {
       vscode.window.showInformationMessage(message);

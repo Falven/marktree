@@ -3,7 +3,7 @@ import {
   DEFAULT_SHOW_COPIED_MSG,
   DEFAULT_SHOW_COPYING_MSG,
 } from '../config.js';
-import { GitExtension } from '../git.js';
+import type { GitExtension } from '../git.js';
 import { runInWorker } from '../utils/run-in-worker.js';
 
 export const copyGitDiffStagedAsMd =
@@ -61,6 +61,9 @@ export const copyGitDiffStagedAsMd =
               cwd: repository.rootUri.fsPath,
             },
           ],
+          ignoreFiles: [],
+          additionalIgnores: [],
+          ignoreBinary: false,
         },
         context,
         outputChannel

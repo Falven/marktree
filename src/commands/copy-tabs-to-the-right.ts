@@ -18,7 +18,6 @@ export const copyTabsToTheRightAsMd =
       'showCopyingMessage',
       DEFAULT_SHOW_COPYING_MSG
     );
-
     let message = 'Copying open tabs to the right as Markdown.';
     outputChannel.appendLine(message);
     if (showCopyingMsg) {
@@ -28,21 +27,41 @@ export const copyTabsToTheRightAsMd =
     let fileUris: vscode.Uri[];
     try {
       fileUris = await getFileUrisFromTabs('right');
-    } catch (err: any) {
-      const msg = err.message || String(err);
-      outputChannel.appendLine(msg);
-      vscode.window.showErrorMessage(msg);
+    } catch (unknownErr) {
+      if (unknownErr instanceof Error) {
+        const msg = unknownErr.message;
+        outputChannel.appendLine(msg);
+        vscode.window.showErrorMessage(msg);
+      } else {
+        const msg = String(unknownErr);
+        outputChannel.appendLine(msg);
+        vscode.window.showErrorMessage(msg);
+      }
       return;
     }
 
-    const workspaceRoot = vscode.workspace.workspaceFolders![0].uri.fsPath;
+    if (fileUris.length === 0) {
+      const emptyMsg = 'No tabs to the right found.';
+      outputChannel.appendLine(emptyMsg);
+      vscode.window.showErrorMessage(emptyMsg);
+      return;
+    }
 
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      const errorMsg = 'No workspace folder found.';
+      outputChannel.appendLine(errorMsg);
+      vscode.window.showErrorMessage(errorMsg);
+      return;
+    }
+
+    let copiedCount = 0;
     try {
-      await runInWorker(
+      copiedCount = await runInWorker(
         {
-          type: 'readFiles',
-          selectedPath: workspaceRoot,
-          workspaceRoot: workspaceRoot,
+          type: 'readFilesPaths',
+          paths: fileUris.map(uri => uri.fsPath) as [string, ...string[]],
+          workspaceRoot: workspaceFolders[0].uri.fsPath,
           ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
             ? DEFAULT_IGNORE_FILES
             : [],
@@ -54,15 +73,14 @@ export const copyTabsToTheRightAsMd =
             'additionalIgnores',
             DEFAULT_ADDITIONAL_IGNORES
           ),
-          paths: fileUris.map(uri => uri.fsPath),
         },
         context,
         outputChannel
       );
-    } catch (err) {
+    } catch (unknownErr) {
       const msg =
         'Error copying open tabs to the right as Markdown. See output for details.';
-      outputChannel.appendLine(String(err));
+      outputChannel.appendLine(String(unknownErr));
       vscode.window.showErrorMessage(msg);
       return;
     }
@@ -71,7 +89,10 @@ export const copyTabsToTheRightAsMd =
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG
     );
-    message = 'Open tabs to the right copied to clipboard as Markdown.';
+    message =
+      copiedCount === 1
+        ? '1 open tab to the right copied to clipboard as Markdown.'
+        : `${copiedCount} open tabs to the right copied to clipboard as Markdown.`;
     outputChannel.appendLine(message);
     if (showCopiedMsg) {
       vscode.window.showInformationMessage(message);

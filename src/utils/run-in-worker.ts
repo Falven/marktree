@@ -1,16 +1,24 @@
 import { Worker } from 'node:worker_threads';
-import * as vscode from 'vscode';
-import { type WorkerRequest } from '../schema.js';
+import type * as vscode from 'vscode';
+import type { WorkerRequest } from '../schema.js';
 
 export const runInWorker = (
   payload: WorkerRequest,
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
-): Promise<void> => {
+): Promise<number> => {
   const workerPath = context.asAbsolutePath('out/worker.js');
   return new Promise((resolve, reject) => {
     const worker = new Worker(workerPath, {
       workerData: payload,
+    });
+
+    let filesCount = 0;
+
+    worker.once('message', msg => {
+      if (typeof msg.filesCount === 'number') {
+        filesCount = msg.filesCount;
+      }
     });
 
     const { threadId } = worker;
@@ -19,7 +27,7 @@ export const runInWorker = (
       `Worker thread type: ${type}, tid: ${threadId} started.`
     );
 
-    worker.once('error', async err => {
+    worker.once('error', async (err: Error) => {
       outputChannel.appendLine(
         `Worker thread type: ${type}, tid: ${threadId} encountered an error: ${err.message}`
       );
@@ -32,7 +40,7 @@ export const runInWorker = (
         `Worker thread type: ${type}, tid: ${threadId} exited with code ${code}.`
       );
       await worker.terminate();
-      resolve();
+      resolve(filesCount);
     });
   });
 };

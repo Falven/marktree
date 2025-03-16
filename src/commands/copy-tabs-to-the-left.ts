@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import {
-    DEFAULT_ADDITIONAL_IGNORES,
-    DEFAULT_GITIGNORE,
-    DEFAULT_IGNORE_BINARY,
-    DEFAULT_IGNORE_FILES,
-    DEFAULT_SHOW_COPIED_MSG,
-    DEFAULT_SHOW_COPYING_MSG,
+  DEFAULT_ADDITIONAL_IGNORES,
+  DEFAULT_GITIGNORE,
+  DEFAULT_IGNORE_BINARY,
+  DEFAULT_IGNORE_FILES,
+  DEFAULT_SHOW_COPIED_MSG,
+  DEFAULT_SHOW_COPYING_MSG,
 } from '../config.js';
 import { runInWorker } from '../utils/run-in-worker.js';
 import { getFileUrisFromTabs } from '../utils/tab-utils.js';
@@ -18,7 +18,6 @@ export const copyTabsToTheLeftAsMd =
       'showCopyingMessage',
       DEFAULT_SHOW_COPYING_MSG
     );
-
     let message = 'Copying open tabs to the left as Markdown.';
     outputChannel.appendLine(message);
     if (showCopyingMsg) {
@@ -28,21 +27,41 @@ export const copyTabsToTheLeftAsMd =
     let fileUris: vscode.Uri[];
     try {
       fileUris = await getFileUrisFromTabs('left');
-    } catch (err: any) {
-      const msg = err.message || String(err);
-      outputChannel.appendLine(msg);
-      vscode.window.showErrorMessage(msg);
+    } catch (unknownErr) {
+      if (unknownErr instanceof Error) {
+        const msg = unknownErr.message;
+        outputChannel.appendLine(msg);
+        vscode.window.showErrorMessage(msg);
+      } else {
+        const msg = String(unknownErr);
+        outputChannel.appendLine(msg);
+        vscode.window.showErrorMessage(msg);
+      }
       return;
     }
 
-    const workspaceRoot = vscode.workspace.workspaceFolders![0].uri.fsPath;
+    if (fileUris.length === 0) {
+      const emptyMsg = 'No tabs to the left found.';
+      outputChannel.appendLine(emptyMsg);
+      vscode.window.showErrorMessage(emptyMsg);
+      return;
+    }
 
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      const errorMsg = 'No workspace folder found.';
+      outputChannel.appendLine(errorMsg);
+      vscode.window.showErrorMessage(errorMsg);
+      return;
+    }
+
+    let copiedCount = 0;
     try {
-      await runInWorker(
+      copiedCount = await runInWorker(
         {
-          type: 'readFiles',
-          selectedPath: workspaceRoot,
-          workspaceRoot: workspaceRoot,
+          type: 'readFilesPaths',
+          paths: fileUris.map(uri => uri.fsPath) as [string, ...string[]],
+          workspaceRoot: workspaceFolders[0].uri.fsPath,
           ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
             ? DEFAULT_IGNORE_FILES
             : [],
@@ -54,15 +73,14 @@ export const copyTabsToTheLeftAsMd =
             'additionalIgnores',
             DEFAULT_ADDITIONAL_IGNORES
           ),
-          paths: fileUris.map(uri => uri.fsPath),
         },
         context,
         outputChannel
       );
-    } catch (err) {
+    } catch (unknownErr) {
       const msg =
         'Error copying open tabs to the left as Markdown. See output for details.';
-      outputChannel.appendLine(String(err));
+      outputChannel.appendLine(String(unknownErr));
       vscode.window.showErrorMessage(msg);
       return;
     }
@@ -71,7 +89,10 @@ export const copyTabsToTheLeftAsMd =
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG
     );
-    message = 'Open tabs to the left copied to clipboard as Markdown.';
+    message =
+      copiedCount === 1
+        ? '1 open tab to the left copied to clipboard as Markdown.'
+        : `${copiedCount} open tabs to the left copied to clipboard as Markdown.`;
     outputChannel.appendLine(message);
     if (showCopiedMsg) {
       vscode.window.showInformationMessage(message);

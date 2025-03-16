@@ -26,7 +26,7 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -228,27 +228,32 @@
         {
           "command": "extension.copyMdTree",
           "group": "7_marktree@1",
-          "when": "config.marktree.showTreeCommand"
+          "when": "config.marktree.showTreeCommand",
+          "enableMultiSelection": false
         },
         {
           "command": "extension.copyMdFiles",
           "group": "7_marktree@2",
-          "when": "config.marktree.showFilesCommand"
+          "when": "config.marktree.showFilesCommand",
+          "enableMultiSelection": true
         },
         {
           "command": "extension.copyMdTreeAndFiles",
           "group": "7_marktree@3",
-          "when": "config.marktree.showTreeAndFilesCommand"
+          "when": "config.marktree.showTreeAndFilesCommand",
+          "enableMultiSelection": true
         },
         {
           "command": "extension.addToMdIgnores",
           "group": "7_marktree@4",
-          "when": "config.marktree.showAddToMdIgnoresCommand"
+          "when": "config.marktree.showAddToMdIgnoresCommand",
+          "enableMultiSelection": true
         },
         {
           "command": "extension.removeFromMdIgnores",
           "group": "7_marktree@5",
-          "when": "config.marktree.showRemoveFromMdIgnoresCommand"
+          "when": "config.marktree.showRemoveFromMdIgnoresCommand",
+          "enableMultiSelection": true
         }
       ]
     }

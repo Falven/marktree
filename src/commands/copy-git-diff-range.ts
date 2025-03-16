@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import {
-    DEFAULT_SHOW_COPIED_MSG,
-    DEFAULT_SHOW_COPYING_MSG,
+  DEFAULT_SHOW_COPIED_MSG,
+  DEFAULT_SHOW_COPYING_MSG,
 } from '../config.js';
-import { GitExtension } from '../git.js';
+import type { GitExtension } from '../git.js';
 import { runInWorker } from '../utils/run-in-worker.js';
 
 export const copyGitDiffRangeQuickPick =
@@ -34,7 +34,7 @@ export const copyGitDiffRangeQuickPick =
     try {
       commits = await repository.log({ maxEntries });
     } catch (err) {
-      const msg = 'Failed to retrieve Git commits via repository.log()';
+      const msg = 'Failed to retrieve Git commits via repository.log().';
       outputChannel.appendLine(String(err));
       vscode.window.showErrorMessage(msg);
       return;
@@ -56,7 +56,7 @@ export const copyGitDiffRangeQuickPick =
 
     const picks = await vscode.window.showQuickPick(items, {
       canPickMany: true,
-      placeHolder: `Select exactly two commits (older first, then newer)`,
+      placeHolder: 'Select commit range (inclusive) to diff.',
       ignoreFocusOut: true,
     });
 
@@ -76,12 +76,12 @@ export const copyGitDiffRangeQuickPick =
     const indexA = commits.findIndex(c => c.hash === pickA.commit.hash);
     const indexB = commits.findIndex(c => c.hash === pickB.commit.hash);
 
-    let startCommit = pickA.commit.hash;
-    let endCommit = pickB.commit.hash;
+    let olderCommit = pickA.commit.hash;
+    let newerCommit = pickB.commit.hash;
 
     if (indexA < indexB) {
-      startCommit = pickB.commit.hash;
-      endCommit = pickA.commit.hash;
+      olderCommit = pickB.commit.hash;
+      newerCommit = pickA.commit.hash;
     }
 
     const config = vscode.workspace.getConfiguration('marktree');
@@ -89,10 +89,11 @@ export const copyGitDiffRangeQuickPick =
       'showCopyingMessage',
       DEFAULT_SHOW_COPYING_MSG
     );
-    let message = `Copying Git diffs from ${startCommit.slice(
+    let message = `Copying Git diffs for the inclusive range from ${olderCommit.slice(
       0,
       7
-    )} to ${endCommit.slice(0, 7)}...`;
+    )} to ${newerCommit.slice(0, 7)} (both commits included)...`;
+
     outputChannel.appendLine(message);
     if (showCopyingMsg) {
       vscode.window.showInformationMessage(message);
@@ -106,10 +107,18 @@ export const copyGitDiffRangeQuickPick =
           shellCommands: [
             {
               command: 'git',
-              args: ['log', `${startCommit}..${endCommit}`, '-p', '--oneline'],
+              args: [
+                'log',
+                `${olderCommit}^..${newerCommit}`,
+                '-p',
+                '--oneline',
+              ],
               cwd: repoRoot,
             },
           ],
+          ignoreFiles: [],
+          additionalIgnores: [],
+          ignoreBinary: false,
         },
         context,
         outputChannel
@@ -128,10 +137,10 @@ export const copyGitDiffRangeQuickPick =
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG
     );
-    message = `Git diffs from ${startCommit.slice(0, 7)}..${endCommit.slice(
+    message = `Git diffs for commits ${olderCommit.slice(
       0,
       7
-    )} copied to clipboard.`;
+    )}..${newerCommit.slice(0, 7)} (inclusive) copied to clipboard.`;
     outputChannel.appendLine(message);
     if (showCopiedMsg) {
       vscode.window.showInformationMessage(message);

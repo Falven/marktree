@@ -103,5 +103,5 @@ export const knownLangs: Record<string, string> = {
  */
 export const guessLanguageByExtension = (filePath: string): string => {
   const ext = path.extname(filePath).toLowerCase().replace('.', '');
-  return knownLangs[ext] || knownLangs['txt'];
+  return knownLangs[ext] || knownLangs.txt;
 };

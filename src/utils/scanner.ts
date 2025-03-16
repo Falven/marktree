@@ -46,12 +46,12 @@ export const scan = async (
   }
 
   const treeLines: string[] = [absPath];
-  const files: string[] = [];
+  const files: string[] = new Array<string>();
   const visited = new Set<string>([absPath]);
 
   const buildEntriesForDir = (
     dir: string
-  ): { name: string; isDir: boolean }[] => {
+  ): Array<{ name: string; isDir: boolean }> => {
     const entry = dirMap.get(dir);
     if (!entry) {
       return [];
@@ -62,7 +62,12 @@ export const scan = async (
     ];
   };
 
-  const stack = [
+  const stack: Array<{
+    dir: string;
+    entries: Array<{ name: string; isDir: boolean }>;
+    index: number;
+    prefix: string;
+  }> = [
     {
       dir: absPath,
       entries: buildEntriesForDir(absPath),
@@ -72,18 +77,16 @@ export const scan = async (
   ];
 
   let dirsCount = isDirectory ? 1 : 0;
+  let filesCount = 0;
 
-  let filesCount;
   if (!isDirectory) {
     filesCount = 1;
     files.push(absPath);
-  } else {
-    filesCount = 0;
   }
 
   while (stack.length > 0) {
     const frame = stack[stack.length - 1];
-    if (frame.index < frame.entries.length) {
+    if (frame && frame.index < frame.entries.length) {
       const entry = frame.entries[frame.index];
       const isLast = frame.index === frame.entries.length - 1;
       const part0 = isLast ? '└── ' : '├── ';
@@ -154,9 +157,7 @@ const readIgnoreFiles = async (
       try {
         const content = await fs.promises.readFile(filePath, 'utf-8');
         contents.push(content);
-      } catch {
-        // no file or unreadable, ignore
-      }
+      } catch {}
     })
   );
 
@@ -179,7 +180,10 @@ const gatherEntries = async (
   ];
 
   while (stack.length > 0) {
-    const frame = stack.pop()!;
+    const frame = stack.pop();
+    if (!frame) {
+      continue;
+    }
     const dir = frame.dir;
 
     parentPatterns.length = frame.patternLength;
@@ -214,12 +218,16 @@ const gatherEntries = async (
       return a.name.localeCompare(b.name);
     });
 
-    const parentEntry = dirMap.get(dir)!;
+    const parentEntry = dirMap.get(dir);
+    if (!parentEntry) {
+      parentPatterns.length = oldLength;
+      continue;
+    }
 
     for (const entry of entries) {
       const entryName = entry.name;
       const isDirectory = entry.isDirectory();
-      const relativePath = isDirectory ? entryName + '/' : entryName;
+      const relativePath = isDirectory ? `${entryName}/` : entryName;
 
       if (currentIg.ignores(relativePath)) {
         continue;

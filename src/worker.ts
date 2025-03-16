@@ -1,14 +1,16 @@
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { workerData } from 'node:worker_threads';
-
-import { WorkerRequest, WorkerRequestSchema } from './schema.js';
+import { parentPort, workerData } from 'node:worker_threads';
+import {
+  type WorkerRequest,
+  WorkerRequestSchema
+} from './schema.js';
 import {
   buildMarkdownContent,
   buildShellExecContent,
 } from './utils/markdown.js';
-import { scan } from './utils/scanner.js';
+import { type ScanResult, scan } from './utils/scanner.js';
 
 (async () => {
   const validation = WorkerRequestSchema.safeParse(workerData);
@@ -17,36 +19,66 @@ import { scan } from './utils/scanner.js';
   }
   const request = validation.data as WorkerRequest;
 
-  let scanningPromise: Promise<{ treeLines: string[]; files: string[] }> =
-    Promise.resolve({ treeLines: [], files: [] });
+  let scanningPromise: Promise<ScanResult> = Promise.resolve({
+    treeLines: [],
+    files: [],
+  });
 
-  if (request.type === 'tree') {
-    scanningPromise = scan(
-      request.selectedPath!,
-      request.workspaceRoot!,
-      request.ignoreFiles || [],
-      request.additionalIgnores || []
-    );
-  } else if (
-    request.type === 'readFiles' ||
-    request.type === 'treeAndReadFiles'
-  ) {
-    if (
-      request.type === 'readFiles' &&
-      request.paths &&
-      request.paths.length > 0
-    ) {
+  switch (request.type) {
+    case 'tree': {
+      scanningPromise = scan(
+        request.selectedPath,
+        request.workspaceRoot,
+        request.ignoreFiles,
+        request.additionalIgnores
+      );
+      break;
+    }
+    case 'readFilesPaths': {
       scanningPromise = Promise.resolve({
         treeLines: [],
         files: request.paths,
       });
-    } else {
+      break;
+    }
+    case 'readFilesSelected': {
       scanningPromise = scan(
-        request.selectedPath!,
-        request.workspaceRoot!,
-        request.ignoreFiles || [],
-        request.additionalIgnores || []
+        request.selectedPath,
+        request.workspaceRoot,
+        request.ignoreFiles,
+        request.additionalIgnores
       );
+      break;
+    }
+    case 'treeAndReadFilesPaths': {
+      scanningPromise = (async (): Promise<ScanResult> => {
+        const combinedTreeLines: string[] = [];
+        const combinedFiles: string[] = [];
+        for (const p of request.paths) {
+          const result = await scan(
+            p,
+            request.workspaceRoot,
+            request.ignoreFiles,
+            request.additionalIgnores
+          );
+          combinedTreeLines.push(...result.treeLines);
+          combinedFiles.push(...result.files);
+        }
+        return { treeLines: combinedTreeLines, files: combinedFiles };
+      })();
+      break;
+    }
+    case 'treeAndReadFilesSelected': {
+      scanningPromise = scan(
+        request.selectedPath,
+        request.workspaceRoot,
+        request.ignoreFiles,
+        request.additionalIgnores
+      );
+      break;
+    }
+    case 'shellExec': {
+      break;
     }
   }
 
@@ -64,38 +96,45 @@ import { scan } from './utils/scanner.js';
     ]);
 
   let markdown = '';
+  let filesCount = 0;
 
   switch (request.type) {
     case 'tree': {
       markdown = buildMarkdownContent([], undefined, scanResult.treeLines);
+      filesCount = scanResult.files.length;
       break;
     }
-
-    case 'readFiles':
-    case 'treeAndReadFiles': {
+    case 'readFilesPaths':
+    case 'readFilesSelected':
+    case 'treeAndReadFilesPaths':
+    case 'treeAndReadFilesSelected': {
       const { treeLines, files } = scanResult;
-
       let binaryExtensionsSet: Set<string> | undefined;
       if (request.ignoreBinary && binaryExtensionsModule) {
         binaryExtensionsSet = new Set(binaryExtensionsModule.default || []);
       }
-
       const fileResults = await Promise.all(
-        files.map(async file => {
+        files.map(async filePath => {
           try {
-            const ext = path.extname(file).toLowerCase().slice(1);
+            const ext = path.extname(filePath).toLowerCase().slice(1);
             if (binaryExtensionsSet?.has(ext)) {
-              return { file, content: null, isBinary: true };
+              return { file: filePath, content: null, isBinary: true };
             }
-            const content = await fs.promises.readFile(file, 'utf-8');
-            return { file, content };
-          } catch (err: any) {
-            return { file, content: null, error: err.message };
+            const content = await fs.promises.readFile(filePath, 'utf-8');
+            return { file: filePath, content };
+          } catch (err) {
+            if (err instanceof Error) {
+              return { file: filePath, content: null, error: err.message };
+            }
+            return { file: filePath, content: null, error: String(err) };
           }
         })
       );
-
-      if (request.type === 'readFiles') {
+      filesCount = fileResults.length;
+      if (
+        request.type === 'readFilesPaths' ||
+        request.type === 'readFilesSelected'
+      ) {
         markdown = buildMarkdownContent(fileResults, request.selectedPath);
       } else {
         markdown = buildMarkdownContent(
@@ -106,12 +145,11 @@ import { scan } from './utils/scanner.js';
       }
       break;
     }
-
     case 'shellExec': {
-      if (!request.shellCommands || request.shellCommands.length === 0) {
+      filesCount = 0;
+      if (!request.shellCommands?.length) {
         throw new Error('No shell commands provided for "shellExec".');
       }
-
       const results = request.shellCommands.map(cmd => {
         const displayCmd = `${cmd.command} ${cmd.args.join(' ')}`;
         let output = '';
@@ -120,17 +158,20 @@ import { scan } from './utils/scanner.js';
             cwd: cmd.cwd ?? request.workspaceRoot ?? process.cwd(),
             encoding: 'utf-8',
           });
-        } catch (err: any) {
-          output = err.message ? err.message : String(err);
+        } catch (err) {
+          if (err instanceof Error) {
+            output = err.message;
+          } else {
+            output = String(err);
+          }
         }
         return { cmd: displayCmd, output };
       });
-
-      markdown = buildShellExecContent(results);
-
-      if (!markdown.trim()) {
+      const combined = buildShellExecContent(results);
+      if (!combined.trim()) {
         throw new Error('No output from shellExec commands.');
       }
+      markdown = combined;
       break;
     }
   }
@@ -139,5 +180,6 @@ import { scan } from './utils/scanner.js';
     throw new Error('No Markdown content to copy.');
   }
 
+  parentPort?.postMessage({ filesCount });
   await clipboardy.write(markdown);
 })();
