@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import * as vscode from 'vscode';
 import {
   DEFAULT_ADDITIONAL_IGNORES,
@@ -13,8 +14,7 @@ export const copyMdFiles =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async (firstUri?: vscode.Uri, allUris?: vscode.Uri[]) => {
     let uris: vscode.Uri[] = [];
-
-    if (allUris) {
+    if (allUris && allUris.length > 0) {
       uris = allUris;
     } else if (firstUri) {
       uris = [firstUri];
@@ -28,12 +28,10 @@ export const copyMdFiles =
       }
       uris = [workspaceFolders[0].uri];
     }
-
     if (uris.length === 0) {
       vscode.window.showErrorMessage('No folder or file selected.');
       return;
     }
-
     const config = vscode.workspace.getConfiguration('marktree');
     const showCopyingMsg = config.get<boolean>(
       'showCopyingMessage',
@@ -44,7 +42,6 @@ export const copyMdFiles =
     if (showCopyingMsg) {
       vscode.window.showInformationMessage(message);
     }
-
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
       const errorMsg = 'No workspace folder found.';
@@ -53,29 +50,76 @@ export const copyMdFiles =
       return;
     }
     const workspaceRoot = workspaceFolders[0].uri.fsPath;
-
     let copiedCount = 0;
     try {
-      copiedCount = await runInWorker(
-        {
-          type: 'readFilesPaths',
-          paths: uris.map(u => u.fsPath) as [string, ...string[]],
-          workspaceRoot,
-          ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
-            ? DEFAULT_IGNORE_FILES
-            : [],
-          ignoreBinary: config.get<boolean>(
-            'ignoreBinary',
-            DEFAULT_IGNORE_BINARY
-          ),
-          additionalIgnores: config.get<string[]>(
-            'additionalIgnores',
-            DEFAULT_ADDITIONAL_IGNORES
-          ),
-        },
-        context,
-        outputChannel
-      );
+      if (uris.length > 1) {
+        copiedCount = await runInWorker(
+          {
+            type: 'treeAndReadFilesPaths',
+            paths: uris.map(u => u.fsPath) as [string, ...string[]],
+            workspaceRoot,
+            ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
+              ? DEFAULT_IGNORE_FILES
+              : [],
+            ignoreBinary: config.get<boolean>(
+              'ignoreBinary',
+              DEFAULT_IGNORE_BINARY
+            ),
+            additionalIgnores: config.get<string[]>(
+              'additionalIgnores',
+              DEFAULT_ADDITIONAL_IGNORES
+            ),
+          },
+          context,
+          outputChannel
+        );
+      } else {
+        const singlePath = uris[0].fsPath;
+        const stat = await fs.promises.stat(singlePath);
+        if (stat.isDirectory()) {
+          copiedCount = await runInWorker(
+            {
+              type: 'treeAndReadFilesSelected',
+              selectedPath: singlePath,
+              workspaceRoot,
+              ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
+                ? DEFAULT_IGNORE_FILES
+                : [],
+              ignoreBinary: config.get<boolean>(
+                'ignoreBinary',
+                DEFAULT_IGNORE_BINARY
+              ),
+              additionalIgnores: config.get<string[]>(
+                'additionalIgnores',
+                DEFAULT_ADDITIONAL_IGNORES
+              ),
+            },
+            context,
+            outputChannel
+          );
+        } else {
+          copiedCount = await runInWorker(
+            {
+              type: 'readFilesPaths',
+              paths: [singlePath],
+              workspaceRoot,
+              ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
+                ? DEFAULT_IGNORE_FILES
+                : [],
+              ignoreBinary: config.get<boolean>(
+                'ignoreBinary',
+                DEFAULT_IGNORE_BINARY
+              ),
+              additionalIgnores: config.get<string[]>(
+                'additionalIgnores',
+                DEFAULT_ADDITIONAL_IGNORES
+              ),
+            },
+            context,
+            outputChannel
+          );
+        }
+      }
     } catch (unknownErr) {
       if (unknownErr instanceof Error) {
         const errorMessage = unknownErr.stack ?? unknownErr.message;
@@ -92,7 +136,6 @@ export const copyMdFiles =
       }
       return;
     }
-
     const showCopiedMsg = config.get<boolean>(
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG

@@ -46,7 +46,7 @@ export const scan = async (
   }
 
   const treeLines: string[] = [absPath];
-  const files: string[] = new Array<string>();
+  const files: string[] = [];
   const visited = new Set<string>([absPath]);
 
   const buildEntriesForDir = (

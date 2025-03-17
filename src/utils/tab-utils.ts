@@ -18,7 +18,6 @@ export async function getFileUrisFromTabs(
     throw new Error('No active tab.');
   }
 
-  // Gather all file-based tabs from all groups
   const allFileTabs: {
     tab: vscode.Tab;
     uri: vscode.Uri;
@@ -39,7 +38,6 @@ export async function getFileUrisFromTabs(
     throw new Error('No file-based open tabs.');
   }
 
-  // Identify the active tab info
   const activeGroupTabs = vscode.window.tabGroups.activeTabGroup.tabs;
   const activeIndex = activeGroupTabs.indexOf(activeTab);
   if (activeIndex === -1) {
@@ -54,7 +52,6 @@ export async function getFileUrisFromTabs(
       break;
 
     case 'left': {
-      // Tabs to the left: same group, indexes < activeIndex
       const leftTabs = allFileTabs.filter(
         t => t.group === activeGroup && t.index < activeIndex
       );
@@ -63,7 +60,6 @@ export async function getFileUrisFromTabs(
     }
 
     case 'right': {
-      // Tabs to the right: same group, indexes > activeIndex
       const rightTabs = allFileTabs.filter(
         t => t.group === activeGroup && t.index > activeIndex
       );
