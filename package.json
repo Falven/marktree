@@ -26,9 +26,9 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "engines": {
-    "vscode": "^1.95.0"
+    "vscode": "^1.98.0"
   },
   "categories": [
     "Other"
@@ -201,8 +201,8 @@
         "category": "MarkTree"
       },
       {
-        "command": "extension.copyGitDiffCommitsQuickPickAsMd",
-        "title": "Copy Git Diffs for Selected Commits",
+        "command": "extension.copyGitCommitsAsMd",
+        "title": "Copy Selected Git Commits",
         "category": "MarkTree"
       }
     ],

@@ -6,7 +6,7 @@ import {
 import type { GitExtension } from '../git.js';
 import { runInWorker } from '../utils/run-in-worker.js';
 
-export const copyGitDiffCommitsQuickPick =
+export const copyGitCommits =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async () => {
     const gitExtension =
@@ -84,7 +84,7 @@ export const copyGitDiffCommitsQuickPick =
     try {
       const shellCommands = picks.map(pick => ({
         command: 'git',
-        args: ['show', pick.commit.hash, '--oneline', '-p'],
+        args: ['show', pick.commit.hash, '-p'],
         cwd: repoRoot,
       })) as [
         { command: string; args: string[]; cwd?: string },
