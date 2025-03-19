@@ -6,7 +6,7 @@ import {
 import type { GitExtension } from '../git.js';
 import { runInWorker } from '../utils/run-in-worker.js';
 
-export const copyGitDiffRangeQuickPick =
+export const copyGitDiffCommitsQuickPick =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async () => {
     const gitExtension =
@@ -28,13 +28,12 @@ export const copyGitDiffRangeQuickPick =
 
     const repository = api.repositories[0];
     const repoRoot = repository.rootUri.fsPath;
-
-    const maxEntries = 50;
+    const maxEntries = 200;
     let commits = [];
     try {
       commits = await repository.log({ maxEntries });
     } catch (err) {
-      const msg = 'Failed to retrieve Git commits via repository.log().';
+      const msg = 'Failed to retrieve Git commits.';
       outputChannel.appendLine(String(err));
       vscode.window.showErrorMessage(msg);
       return;
@@ -47,41 +46,26 @@ export const copyGitDiffRangeQuickPick =
 
     const items = commits.map(commit => {
       const shortHash = commit.hash.slice(0, 7);
+      const detail = commit.commitDate
+        ? new Date(commit.commitDate).toLocaleString()
+        : undefined;
       return {
         label: shortHash,
         description: commit.message,
+        detail,
         commit,
       };
     });
 
     const picks = await vscode.window.showQuickPick(items, {
       canPickMany: true,
-      placeHolder: 'Select commit range (inclusive) to diff.',
+      placeHolder: 'Select commits to copy diffs.',
       ignoreFocusOut: true,
     });
 
-    if (!picks || picks.length < 2) {
+    if (!picks || picks.length === 0) {
       vscode.window.showInformationMessage('No commits selected.');
       return;
-    }
-    if (picks.length > 2) {
-      vscode.window.showInformationMessage(
-        'Please select exactly two commits.'
-      );
-      return;
-    }
-
-    const pickA = picks[0];
-    const pickB = picks[1];
-    const indexA = commits.findIndex(c => c.hash === pickA.commit.hash);
-    const indexB = commits.findIndex(c => c.hash === pickB.commit.hash);
-
-    let olderCommit = pickA.commit.hash;
-    let newerCommit = pickB.commit.hash;
-
-    if (indexA < indexB) {
-      olderCommit = pickB.commit.hash;
-      newerCommit = pickA.commit.hash;
     }
 
     const config = vscode.workspace.getConfiguration('marktree');
@@ -89,33 +73,29 @@ export const copyGitDiffRangeQuickPick =
       'showCopyingMessage',
       DEFAULT_SHOW_COPYING_MSG
     );
-    let message = `Copying Git diffs for the inclusive range from ${olderCommit.slice(
-      0,
-      7
-    )} to ${newerCommit.slice(0, 7)} (both commits included)...`;
-
+    let message = `Copying Git diffs for ${picks.length} selected commit${
+      picks.length > 1 ? 's' : ''
+    }...`;
     outputChannel.appendLine(message);
     if (showCopyingMsg) {
       vscode.window.showInformationMessage(message);
     }
 
     try {
+      const shellCommands = picks.map(pick => ({
+        command: 'git',
+        args: ['show', pick.commit.hash, '--oneline', '-p'],
+        cwd: repoRoot,
+      })) as [
+        { command: string; args: string[]; cwd?: string },
+        ...{ command: string; args: string[]; cwd?: string }[]
+      ];
+
       await runInWorker(
         {
           type: 'shellExec',
           workspaceRoot: repoRoot,
-          shellCommands: [
-            {
-              command: 'git',
-              args: [
-                'log',
-                `${olderCommit}^..${newerCommit}`,
-                '-p',
-                '--oneline',
-              ],
-              cwd: repoRoot,
-            },
-          ],
+          shellCommands,
           ignoreFiles: [],
           additionalIgnores: [],
           ignoreBinary: false,
@@ -127,7 +107,7 @@ export const copyGitDiffRangeQuickPick =
       const msg =
         err instanceof Error
           ? err.message
-          : 'Error copying Git diffs for the selected commit range.';
+          : 'Error copying Git diffs for the selected commits.';
       outputChannel.appendLine(String(err));
       vscode.window.showErrorMessage(msg);
       return;
@@ -137,10 +117,9 @@ export const copyGitDiffRangeQuickPick =
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG
     );
-    message = `Git diffs for commits ${olderCommit.slice(
-      0,
-      7
-    )}..${newerCommit.slice(0, 7)} (inclusive) copied to clipboard.`;
+    message = `Git diffs for ${picks.length} commit${
+      picks.length > 1 ? 's' : ''
+    } copied to clipboard.`;
     outputChannel.appendLine(message);
     if (showCopiedMsg) {
       vscode.window.showInformationMessage(message);

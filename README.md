@@ -19,6 +19,7 @@ MarkTree enables you to quickly copy workspace directory structures, file conten
 - **.gitignore Support:** MarkTree can optionally respect your workspace’s `.gitignore` files, so you can copy only the files you want to share (Also allows additional entries via settings).
 - **Binary File Skipping:** MarkTree can optionally skip binary files when copying directory contents.
 - **Copy Staged Git Changes:** MarkTree can gather the staged changes in your repository and copy them as Markdown diffs—perfect for reviewing or sharing partial commits.
+- **Copy Git Diffs for Selected Commits:** Use a QuickPick to select multiple commits. MarkTree gathers the `git show` output for each commit and combines them into a single Markdown snippet.
 - **Configurable Menus:** Add or remove any of the commands from your context menus, including the tab context menu.
 - **Ignore Customization:** Add or remove ignores from a file’s context menu to fine-tune what files appear in your markdown output.
 
