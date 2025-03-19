@@ -267,21 +267,21 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.9",
-    "@types/node": "~20.17.9",
-    "@types/vscode": "^1.95.0",
-    "@typescript-eslint/eslint-plugin": "^8.10.0",
-    "@typescript-eslint/parser": "^8.7.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "~20.17.24",
+    "@types/vscode": "^1.98.0",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "eslint": "^9.13.0",
-    "typescript": "^5.6.3"
+    "eslint": "^9.22.0",
+    "typescript": "^5.8.2"
   },
   "dependencies": {
     "binary-extensions": "^3.0.0",
     "clipboardy": "^4.0.0",
     "ignore": "^6.0.2",
-    "zod": "^3.23.8"
+    "zod": "^3.24.2"
   },
   "packageManager": "pnpm@9.15.0+sha512.76e2379760a4328ec4415815bcd6628dee727af3779aaa4c914e3944156c4299921a89f976381ee107d41f12cfa4b66681ca9c718f0668fa0831ed4c6d8ba56c"
 }
