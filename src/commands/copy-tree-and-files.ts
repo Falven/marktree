@@ -14,7 +14,7 @@ export const copyMdTreeAndFiles =
   async (firstUri?: vscode.Uri, allUris?: vscode.Uri[]) => {
     let uris: vscode.Uri[] = [];
 
-    if (allUris) {
+    if (allUris && allUris.length > 0) {
       uris = allUris;
     } else if (firstUri) {
       uris = [firstUri];
