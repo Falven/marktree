@@ -24,8 +24,8 @@ import { type ScanResult, scan } from './utils/scanner.js';
   switch (request.type) {
     case 'tree': {
       scanningPromise = scan(
-        request.selectedPath,
         request.workspaceRoot,
+        request.selectedPath,
         request.ignoreFiles,
         request.additionalIgnores
       );
@@ -40,8 +40,8 @@ import { type ScanResult, scan } from './utils/scanner.js';
     }
     case 'readFilesSelected': {
       scanningPromise = scan(
-        request.selectedPath,
         request.workspaceRoot,
+        request.selectedPath,
         request.ignoreFiles,
         request.additionalIgnores
       );
@@ -53,8 +53,8 @@ import { type ScanResult, scan } from './utils/scanner.js';
         const combinedFiles: string[] = [];
         for (const p of request.paths) {
           const result = await scan(
-            p,
             request.workspaceRoot,
+            p,
             request.ignoreFiles,
             request.additionalIgnores
           );
@@ -67,8 +67,8 @@ import { type ScanResult, scan } from './utils/scanner.js';
     }
     case 'treeAndReadFilesSelected': {
       scanningPromise = scan(
-        request.selectedPath,
         request.workspaceRoot,
+        request.selectedPath,
         request.ignoreFiles,
         request.additionalIgnores
       );
