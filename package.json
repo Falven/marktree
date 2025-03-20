@@ -26,7 +26,7 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "engines": {
     "vscode": "^1.98.0"
   },
@@ -270,8 +270,8 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "~20.17.24",
     "@types/vscode": "^1.98.0",
-    "@typescript-eslint/eslint-plugin": "^8.26.1",
-    "@typescript-eslint/parser": "^8.26.1",
+    "@typescript-eslint/eslint-plugin": "^8.27.0",
+    "@typescript-eslint/parser": "^8.27.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.22.0",
@@ -281,6 +281,7 @@
     "binary-extensions": "^3.0.0",
     "clipboardy": "^4.0.0",
     "ignore": "^6.0.2",
+    "vscode-uri": "^3.1.0",
     "zod": "^3.24.2"
   },
   "packageManager": "pnpm@9.15.0+sha512.76e2379760a4328ec4415815bcd6628dee727af3779aaa4c914e3944156c4299921a89f976381ee107d41f12cfa4b66681ca9c718f0668fa0831ed4c6d8ba56c"

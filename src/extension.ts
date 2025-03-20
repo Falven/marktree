@@ -13,75 +13,75 @@ import { updateMDIgnores } from './commands/update-md-ignores.js';
 let outputChannel: vscode.OutputChannel;
 
 export const activate = async (
-  context: vscode.ExtensionContext,
+  context: vscode.ExtensionContext
 ): Promise<void> => {
   outputChannel = vscode.window.createOutputChannel('MarkTree');
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyMdTree',
-      copyMdTree(context, outputChannel),
-    ),
+      copyMdTree(context, outputChannel)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyMdFiles',
-      copyMdFiles(context, outputChannel),
-    ),
+      copyMdFiles(context, outputChannel)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyMdTreeAndFiles',
-      copyMdTreeAndFiles(context, outputChannel),
-    ),
+      copyMdTreeAndFiles(context, outputChannel)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyActiveFileMd',
-      copyActiveFileMd(context, outputChannel),
-    ),
+      copyActiveFileMd(context, outputChannel)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.addToMdIgnores',
-      updateMDIgnores(outputChannel, false),
-    ),
+      updateMDIgnores(outputChannel, false)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.removeFromMdIgnores',
-      updateMDIgnores(outputChannel, true),
-    ),
+      updateMDIgnores(outputChannel, true)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyTabsAsMd',
-      copyTabsAsMd(context, outputChannel),
-    ),
+      copyTabsAsMd(context, outputChannel)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyTabsToTheLeftAsMd',
-      copyTabsToTheLeftAsMd(context, outputChannel),
-    ),
+      copyTabsToTheLeftAsMd(context, outputChannel)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyTabsToTheRightAsMd',
-      copyTabsToTheRightAsMd(context, outputChannel),
-    ),
+      copyTabsToTheRightAsMd(context, outputChannel)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyGitStagedAsMd',
-      copyGitDiffStagedAsMd(context, outputChannel),
-    ),
+      copyGitDiffStagedAsMd(context, outputChannel)
+    )
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'extension.copyGitCommitsAsMd',
-      copyGitCommits(context, outputChannel),
-    ),
+      copyGitCommits(context, outputChannel)
+    )
   );
 
   outputChannel.appendLine('Extension activated.');

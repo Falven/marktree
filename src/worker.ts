@@ -10,11 +10,8 @@ import {
 import { type ScanResult, scan } from './utils/scanner.js';
 
 (async () => {
-  const validation = WorkerRequestSchema.safeParse(workerData);
-  if (!validation.success) {
-    throw new Error(`Invalid WorkerRequest: ${validation.error.message}`);
-  }
-  const request = validation.data as WorkerRequest;
+  const validation = WorkerRequestSchema.parse(workerData);
+  const request = validation as WorkerRequest;
 
   let scanningPromise: Promise<ScanResult> = Promise.resolve({
     treeLines: [],
@@ -51,10 +48,10 @@ import { type ScanResult, scan } from './utils/scanner.js';
       scanningPromise = (async (): Promise<ScanResult> => {
         const combinedTreeLines: string[] = [];
         const combinedFiles: string[] = [];
-        for (const p of request.paths) {
+        for (const selectedPath of request.paths) {
           const result = await scan(
             request.workspaceRoot,
-            p,
+            selectedPath,
             request.ignoreFiles,
             request.additionalIgnores
           );

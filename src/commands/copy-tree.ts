@@ -12,36 +12,39 @@ import { runInWorker } from '../utils/run-in-worker.js';
 export const copyMdTree =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async (uri?: vscode.Uri) => {
-    let resolvedUri = uri;
-    if (!resolvedUri) {
-      const activeEditor = vscode.window.activeTextEditor;
-      if (!activeEditor) {
-        vscode.window.showErrorMessage(
-          'No folder or file selected in explorer or active editor.'
-        );
+    try {
+      let resolvedUri = uri;
+      if (!resolvedUri) {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor) {
+          vscode.window.showErrorMessage(
+            'No folder or file selected in explorer or active editor.'
+          );
+          return;
+        }
+        resolvedUri = activeEditor.document.uri;
+      }
+
+      const config = vscode.workspace.getConfiguration('marktree');
+      const showCopyingMsg = config.get<boolean>(
+        'showCopyingMessage',
+        DEFAULT_SHOW_COPYING_MSG
+      );
+      let message = 'Copying directory tree to clipboard as Markdown.';
+      outputChannel.appendLine(message);
+      if (showCopyingMsg) {
+        vscode.window.showInformationMessage(message);
+      }
+
+      const folder = vscode.workspace.getWorkspaceFolder(resolvedUri);
+      if (!folder) {
+        const msg = 'No workspace folder found.';
+        outputChannel.appendLine(msg);
+        vscode.window.showErrorMessage(msg);
         return;
       }
-      resolvedUri = activeEditor.document.uri;
-    }
-    const config = vscode.workspace.getConfiguration('marktree');
-    const showCopyingMsg = config.get<boolean>(
-      'showCopyingMessage',
-      DEFAULT_SHOW_COPYING_MSG
-    );
-    let message = 'Copying directory tree to clipboard as Markdown.';
-    outputChannel.appendLine(message);
-    if (showCopyingMsg) {
-      vscode.window.showInformationMessage(message);
-    }
-    const folder = vscode.workspace.getWorkspaceFolder(resolvedUri);
-    if (!folder) {
-      const msg = 'No workspace folder found.';
-      outputChannel.appendLine(msg);
-      vscode.window.showErrorMessage(msg);
-      return;
-    }
-    const workspaceRoot = folder.uri.fsPath;
-    try {
+
+      const workspaceRoot = folder.uri.fsPath;
       await runInWorker(
         {
           type: 'tree',
@@ -62,6 +65,16 @@ export const copyMdTree =
         context,
         outputChannel
       );
+
+      const showCopiedMsg = config.get<boolean>(
+        'showCopiedMessage',
+        DEFAULT_SHOW_COPIED_MSG
+      );
+      message = 'Directory tree copied to clipboard as Markdown.';
+      outputChannel.appendLine(message);
+      if (showCopiedMsg) {
+        vscode.window.showInformationMessage(message);
+      }
     } catch (err) {
       if (err instanceof Error) {
         const errorMessage = err.stack ?? err.message;
@@ -69,16 +82,12 @@ export const copyMdTree =
         vscode.window.showErrorMessage(
           'Error copying the Markdown directory tree. See output for details.'
         );
-        return;
+      } else {
+        const errorMessage = String(err);
+        outputChannel.appendLine(errorMessage);
+        vscode.window.showErrorMessage(
+          'Error copying the Markdown directory tree. See output for details.'
+        );
       }
-    }
-    const showCopiedMsg = config.get<boolean>(
-      'showCopiedMessage',
-      DEFAULT_SHOW_COPIED_MSG
-    );
-    message = 'Directory tree copied to clipboard as Markdown.';
-    outputChannel.appendLine(message);
-    if (showCopiedMsg) {
-      vscode.window.showInformationMessage(message);
     }
   };

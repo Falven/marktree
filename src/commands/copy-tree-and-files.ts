@@ -8,56 +8,48 @@ import {
   DEFAULT_SHOW_COPYING_MSG,
 } from '../config.js';
 import { runInWorker } from '../utils/run-in-worker.js';
+import { resolveSelectionUris } from '../utils/uri-resolver.js';
 
 export const copyMdTreeAndFiles =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async (firstUri?: vscode.Uri, allUris?: vscode.Uri[]) => {
-    let uris: vscode.Uri[] = [];
-    if (allUris && allUris.length > 0) {
-      uris = allUris;
-    } else if (firstUri) {
-      uris = [firstUri];
-    } else {
-      const workspaceFolders = vscode.workspace.workspaceFolders;
-      if (!workspaceFolders || workspaceFolders.length === 0) {
-        vscode.window.showErrorMessage(
-          'No folder selected or no workspace folder found.'
-        );
+    try {
+      const uris = resolveSelectionUris(firstUri, allUris);
+      if (uris.length === 0) {
+        vscode.window.showErrorMessage('Please select a folder or file.');
         return;
       }
-      uris = [workspaceFolders[0].uri];
-    }
-    if (uris.length === 0) {
-      vscode.window.showErrorMessage('No folder or file selected.');
-      return;
-    }
-    const config = vscode.workspace.getConfiguration('marktree');
-    const showCopyingMsg = config.get<boolean>(
-      'showCopyingMessage',
-      DEFAULT_SHOW_COPYING_MSG
-    );
-    let message =
-      'Copying directory tree and file contents to clipboard as Markdown.';
-    outputChannel.appendLine(message);
-    if (showCopyingMsg) {
-      vscode.window.showInformationMessage(message);
-    }
-    const folder = vscode.workspace.getWorkspaceFolder(uris[0]);
-    if (!folder) {
-      const msg = 'No workspace folder found.';
-      outputChannel.appendLine(msg);
-      vscode.window.showErrorMessage(msg);
-      return;
-    }
-    const workspaceRoot = folder.uri.fsPath;
-    let copiedCount = 0;
-    try {
+
+      const config = vscode.workspace.getConfiguration('marktree');
+      const showCopyingMsg = config.get<boolean>(
+        'showCopyingMessage',
+        DEFAULT_SHOW_COPYING_MSG
+      );
+      let message =
+        'Copying directory tree and file contents to clipboard as Markdown.';
+      outputChannel.appendLine(message);
+      if (showCopyingMsg) {
+        vscode.window.showInformationMessage(message);
+      }
+
+      const folder = vscode.workspace.getWorkspaceFolder(uris[0]);
+      if (!folder) {
+        const msg =
+          'The selected path is not part of any open workspace folder.';
+        outputChannel.appendLine(msg);
+        vscode.window.showErrorMessage(msg);
+        return;
+      }
+
+      const workspaceRoot = folder.uri.fsPath;
+      let copiedCount = 0;
+
       if (uris.length > 1) {
         copiedCount = await runInWorker(
           {
             type: 'treeAndReadFilesPaths',
             paths: uris.map(u => u.fsPath) as [string, ...string[]],
-            workspaceRoot: workspaceRoot,
+            workspaceRoot,
             ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
               ? DEFAULT_IGNORE_FILES
               : [],
@@ -79,7 +71,7 @@ export const copyMdTreeAndFiles =
           {
             type: 'treeAndReadFilesSelected',
             selectedPath: singlePath,
-            workspaceRoot: workspaceRoot,
+            workspaceRoot,
             ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
               ? DEFAULT_IGNORE_FILES
               : [],
@@ -96,6 +88,19 @@ export const copyMdTreeAndFiles =
           outputChannel
         );
       }
+
+      const showCopiedMsg = config.get<boolean>(
+        'showCopiedMessage',
+        DEFAULT_SHOW_COPIED_MSG
+      );
+      message =
+        copiedCount === 1
+          ? 'Directory tree and 1 file content copied to clipboard as Markdown.'
+          : `Directory tree and ${copiedCount} file contents copied to clipboard as Markdown.`;
+      outputChannel.appendLine(message);
+      if (showCopiedMsg) {
+        vscode.window.showInformationMessage(message);
+      }
     } catch (err) {
       if (err instanceof Error) {
         const errorMessage = err.stack ?? err.message;
@@ -103,19 +108,12 @@ export const copyMdTreeAndFiles =
         vscode.window.showErrorMessage(
           'Error copying the Markdown directory tree and file contents. See output for details.'
         );
+      } else {
+        const errorMessage = String(err);
+        outputChannel.appendLine(errorMessage);
+        vscode.window.showErrorMessage(
+          'Error copying the Markdown directory tree and file contents. See output for details.'
+        );
       }
-      return;
-    }
-    const showCopiedMsg = config.get<boolean>(
-      'showCopiedMessage',
-      DEFAULT_SHOW_COPIED_MSG
-    );
-    message =
-      copiedCount === 1
-        ? 'Directory tree and 1 file content copied to clipboard as Markdown.'
-        : `Directory tree and ${copiedCount} file contents copied to clipboard as Markdown.`;
-    outputChannel.appendLine(message);
-    if (showCopiedMsg) {
-      vscode.window.showInformationMessage(message);
     }
   };
