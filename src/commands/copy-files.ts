@@ -42,14 +42,14 @@ export const copyMdFiles =
     if (showCopyingMsg) {
       vscode.window.showInformationMessage(message);
     }
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
+    const folder = vscode.workspace.getWorkspaceFolder(uris[0]);
+    if (!folder) {
       const errorMsg = 'No workspace folder found.';
       outputChannel.appendLine(errorMsg);
       vscode.window.showErrorMessage(errorMsg);
       return;
     }
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+    const workspaceRoot = folder.uri.fsPath;
     let copiedCount = 0;
     try {
       if (uris.length > 1) {

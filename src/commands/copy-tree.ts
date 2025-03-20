@@ -23,28 +23,24 @@ export const copyMdTree =
       }
       resolvedUri = activeEditor.document.uri;
     }
-
     const config = vscode.workspace.getConfiguration('marktree');
     const showCopyingMsg = config.get<boolean>(
       'showCopyingMessage',
       DEFAULT_SHOW_COPYING_MSG
     );
-
     let message = 'Copying directory tree to clipboard as Markdown.';
     outputChannel.appendLine(message);
     if (showCopyingMsg) {
       vscode.window.showInformationMessage(message);
     }
-
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
+    const folder = vscode.workspace.getWorkspaceFolder(resolvedUri);
+    if (!folder) {
       const msg = 'No workspace folder found.';
       outputChannel.appendLine(msg);
       vscode.window.showErrorMessage(msg);
       return;
     }
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
-
+    const workspaceRoot = folder.uri.fsPath;
     try {
       await runInWorker(
         {
@@ -76,12 +72,10 @@ export const copyMdTree =
         return;
       }
     }
-
     const showCopiedMsg = config.get<boolean>(
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG
     );
-
     message = 'Directory tree copied to clipboard as Markdown.';
     outputChannel.appendLine(message);
     if (showCopiedMsg) {

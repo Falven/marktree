@@ -13,7 +13,6 @@ export const copyMdTreeAndFiles =
   (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
   async (firstUri?: vscode.Uri, allUris?: vscode.Uri[]) => {
     let uris: vscode.Uri[] = [];
-
     if (allUris && allUris.length > 0) {
       uris = allUris;
     } else if (firstUri) {
@@ -28,12 +27,10 @@ export const copyMdTreeAndFiles =
       }
       uris = [workspaceFolders[0].uri];
     }
-
     if (uris.length === 0) {
       vscode.window.showErrorMessage('No folder or file selected.');
       return;
     }
-
     const config = vscode.workspace.getConfiguration('marktree');
     const showCopyingMsg = config.get<boolean>(
       'showCopyingMessage',
@@ -45,15 +42,14 @@ export const copyMdTreeAndFiles =
     if (showCopyingMsg) {
       vscode.window.showInformationMessage(message);
     }
-
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
+    const folder = vscode.workspace.getWorkspaceFolder(uris[0]);
+    if (!folder) {
       const msg = 'No workspace folder found.';
       outputChannel.appendLine(msg);
       vscode.window.showErrorMessage(msg);
       return;
     }
-
+    const workspaceRoot = folder.uri.fsPath;
     let copiedCount = 0;
     try {
       if (uris.length > 1) {
@@ -61,7 +57,7 @@ export const copyMdTreeAndFiles =
           {
             type: 'treeAndReadFilesPaths',
             paths: uris.map(u => u.fsPath) as [string, ...string[]],
-            workspaceRoot: workspaceFolders[0].uri.fsPath,
+            workspaceRoot: workspaceRoot,
             ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
               ? DEFAULT_IGNORE_FILES
               : [],
@@ -83,7 +79,7 @@ export const copyMdTreeAndFiles =
           {
             type: 'treeAndReadFilesSelected',
             selectedPath: singlePath,
-            workspaceRoot: workspaceFolders[0].uri.fsPath,
+            workspaceRoot: workspaceRoot,
             ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
               ? DEFAULT_IGNORE_FILES
               : [],
@@ -110,7 +106,6 @@ export const copyMdTreeAndFiles =
       }
       return;
     }
-
     const showCopiedMsg = config.get<boolean>(
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG

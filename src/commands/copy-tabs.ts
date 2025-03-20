@@ -23,7 +23,6 @@ export const copyTabsAsMd =
     if (showCopyingMsg) {
       vscode.window.showInformationMessage(message);
     }
-
     let fileUris: vscode.Uri[];
     try {
       fileUris = await getFileUrisFromTabs('all');
@@ -39,29 +38,27 @@ export const copyTabsAsMd =
       }
       return;
     }
-
     if (fileUris.length === 0) {
       const emptyMsg = 'No open tabs found.';
       outputChannel.appendLine(emptyMsg);
       vscode.window.showErrorMessage(emptyMsg);
       return;
     }
-
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
+    const folder = vscode.workspace.getWorkspaceFolder(fileUris[0]);
+    if (!folder) {
       const errorMsg = 'No workspace folder found.';
       outputChannel.appendLine(errorMsg);
       vscode.window.showErrorMessage(errorMsg);
       return;
     }
-
+    const workspaceRoot = folder.uri.fsPath;
     let copiedCount = 0;
     try {
       copiedCount = await runInWorker(
         {
           type: 'readFilesPaths',
           paths: fileUris.map(uri => uri.fsPath) as [string, ...string[]],
-          workspaceRoot: workspaceFolders[0].uri.fsPath,
+          workspaceRoot: workspaceRoot,
           ignoreFiles: config.get<boolean>('gitignore', DEFAULT_GITIGNORE)
             ? DEFAULT_IGNORE_FILES
             : [],
@@ -84,7 +81,6 @@ export const copyTabsAsMd =
       vscode.window.showErrorMessage(msg);
       return;
     }
-
     const showCopiedMsg = config.get<boolean>(
       'showCopiedMessage',
       DEFAULT_SHOW_COPIED_MSG

@@ -7,13 +7,15 @@ export function buildMarkdownContent(
   workspaceRoot: string,
   treeLines?: string[]
 ): string {
+  const workspaceName = path.basename(workspaceRoot);
   const initialMarkdown =
     treeLines && treeLines.length > 0
       ? `\`\`\`sh\n${treeLines.join('\n')}\n\`\`\`\n\n`
       : '';
 
   return fileResults.reduce((markdown, result) => {
-    const displayPath = path.relative(workspaceRoot, result.file);
+    const relativePath = path.relative(workspaceRoot, result.file);
+    const displayPath = path.join(workspaceName, relativePath);
 
     if (result.isBinary) {
       return `${markdown}${displayPath}\n(Binary file: content not displayed)\n\n`;
@@ -39,6 +41,5 @@ export function buildShellExecContent(
     const trimmedOutput = output.trimEnd();
     return `$ ${cmd}\n${trimmedOutput}`;
   });
-
   return `\`\`\`sh\n${lines.join('\n\n')}\n\`\`\`\n`;
 }

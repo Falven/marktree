@@ -18,15 +18,9 @@ export const scan = async (
   ignoreFiles: string[],
   additionalIgnores: string[]
 ): Promise<ScanResult> => {
-  if (!absPath.startsWith(absWorkspaceRoot)) {
-    throw new Error(
-      `The directory ${absPath} is not inside workspaceRoot ${absWorkspaceRoot}`
-    );
-  }
-
+  const workspaceName = path.basename(absWorkspaceRoot);
   const stat = await fs.promises.stat(absPath);
   const isDirectory = stat.isDirectory();
-
   const parentPatterns: string[] = [];
   await accumulatePatternsUpTo(
     absWorkspaceRoot,
@@ -34,21 +28,20 @@ export const scan = async (
     ignoreFiles,
     parentPatterns
   );
-
   parentPatterns.push(additionalIgnores.join('\n'));
-
   const dirMap = new Map<string, ScanEntry>();
-
   if (isDirectory) {
     await gatherEntries(absPath, parentPatterns, dirMap, ignoreFiles);
   } else {
     dirMap.set(absPath, { dirs: [], files: [] });
   }
-
-  const treeLines: string[] = [path.relative(absWorkspaceRoot, absPath)];
+  const topLine = path.join(
+    workspaceName,
+    path.relative(absWorkspaceRoot, absPath)
+  );
+  const treeLines: string[] = [topLine];
   const files: string[] = [];
   const visited = new Set<string>([absPath]);
-
   const buildEntriesForDir = (
     dir: string
   ): Array<{ name: string; isDir: boolean }> => {
@@ -61,7 +54,6 @@ export const scan = async (
       ...entry.files.map(f => ({ name: f, isDir: false })),
     ];
   };
-
   const stack: Array<{
     dir: string;
     entries: Array<{ name: string; isDir: boolean }>;
@@ -75,15 +67,12 @@ export const scan = async (
       prefix: '',
     },
   ];
-
   let dirsCount = isDirectory ? 1 : 0;
   let filesCount = 0;
-
   if (!isDirectory) {
     filesCount = 1;
     files.push(absPath);
   }
-
   while (stack.length > 0) {
     const frame = stack[stack.length - 1];
     if (frame && frame.index < frame.entries.length) {
@@ -92,11 +81,11 @@ export const scan = async (
       const part0 = isLast ? '└── ' : '├── ';
       const part1 = isLast ? '    ' : '│   ';
       const fullPath = path.join(frame.dir, entry.name);
-
-      treeLines.push(
-        frame.prefix + part0 + path.relative(absWorkspaceRoot, fullPath)
+      const line = path.join(
+        workspaceName,
+        path.relative(absWorkspaceRoot, fullPath)
       );
-
+      treeLines.push(frame.prefix + part0 + line);
       if (entry.isDir) {
         if (!visited.has(fullPath)) {
           visited.add(fullPath);
@@ -117,7 +106,6 @@ export const scan = async (
       stack.pop();
     }
   }
-
   treeLines.push(`\n${dirsCount} directories, ${filesCount} files`);
   return { treeLines, files };
 };
@@ -130,18 +118,15 @@ const accumulatePatternsUpTo = async (
 ): Promise<void> => {
   const relPath = path.relative(absWorkspaceRoot, absDirectory);
   const segments = relPath ? relPath.split(path.sep) : [];
-
   const dirsToCheck = [absWorkspaceRoot];
   let currentDir = absWorkspaceRoot;
   for (const segment of segments) {
     currentDir = path.join(currentDir, segment);
     dirsToCheck.push(currentDir);
   }
-
   const allResults = await Promise.all(
     dirsToCheck.map(dir => readIgnoreFiles(dir, ignoreFiles))
   );
-
   for (const contents of allResults) {
     parentPatterns.push(...contents);
   }
@@ -152,7 +137,6 @@ const readIgnoreFiles = async (
   ignoreFiles: string[]
 ): Promise<string[]> => {
   const contents: string[] = [];
-
   await Promise.all(
     ignoreFiles.map(async fileName => {
       const filePath = path.join(dir, fileName);
@@ -162,7 +146,6 @@ const readIgnoreFiles = async (
       } catch {}
     })
   );
-
   return contents;
 };
 
@@ -176,33 +159,26 @@ const gatherEntries = async (
     dir: string;
     patternLength: number;
   };
-
   const stack: DirFrame[] = [
     { dir: startDir, patternLength: parentPatterns.length },
   ];
-
   while (stack.length > 0) {
     const frame = stack.pop();
     if (!frame) {
       continue;
     }
     const dir = frame.dir;
-
     parentPatterns.length = frame.patternLength;
-
     const thisDirPatterns = await readIgnoreFiles(dir, ignoreFiles);
     const oldLength = parentPatterns.length;
     parentPatterns.push(...thisDirPatterns);
-
     const currentIg = ignore();
     if (parentPatterns.length > 0) {
       currentIg.add(parentPatterns.join('\n'));
     }
-
     if (!dirMap.has(dir)) {
       dirMap.set(dir, { dirs: [], files: [] });
     }
-
     let entries: fs.Dirent[];
     try {
       entries = await fs.promises.readdir(dir, { withFileTypes: true });
@@ -210,7 +186,6 @@ const gatherEntries = async (
       parentPatterns.length = oldLength;
       continue;
     }
-
     entries.sort((a, b) => {
       const aIsDir = a.isDirectory() ? 0 : 1;
       const bIsDir = b.isDirectory() ? 0 : 1;
@@ -219,22 +194,18 @@ const gatherEntries = async (
       }
       return a.name.localeCompare(b.name);
     });
-
     const parentEntry = dirMap.get(dir);
     if (!parentEntry) {
       parentPatterns.length = oldLength;
       continue;
     }
-
     for (const entry of entries) {
       const entryName = entry.name;
       const isDirectory = entry.isDirectory();
       const relativePath = isDirectory ? `${entryName}/` : entryName;
-
       if (currentIg.ignores(relativePath)) {
         continue;
       }
-
       if (isDirectory) {
         if (!parentEntry.dirs.includes(entryName)) {
           parentEntry.dirs.push(entryName);
@@ -250,7 +221,6 @@ const gatherEntries = async (
         }
       }
     }
-
     parentPatterns.length = oldLength;
   }
 };
