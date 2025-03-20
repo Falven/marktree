@@ -4,7 +4,7 @@ import { guessLanguageByExtension } from './lang.js';
 
 export function buildMarkdownContent(
   fileResults: FileResult[],
-  basePath?: string,
+  workspaceRoot: string,
   treeLines?: string[]
 ): string {
   const initialMarkdown =
@@ -13,9 +13,7 @@ export function buildMarkdownContent(
       : '';
 
   return fileResults.reduce((markdown, result) => {
-    const displayPath = basePath
-      ? path.relative(basePath, result.file) || path.basename(result.file)
-      : path.basename(result.file);
+    const displayPath = path.relative(workspaceRoot, result.file);
 
     if (result.isBinary) {
       return `${markdown}${displayPath}\n(Binary file: content not displayed)\n\n`;

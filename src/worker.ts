@@ -2,10 +2,7 @@ import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { parentPort, workerData } from 'node:worker_threads';
-import {
-  type WorkerRequest,
-  WorkerRequestSchema
-} from './schema.js';
+import { type WorkerRequest, WorkerRequestSchema } from './schema.js';
 import {
   buildMarkdownContent,
   buildShellExecContent,
@@ -100,7 +97,11 @@ import { type ScanResult, scan } from './utils/scanner.js';
 
   switch (request.type) {
     case 'tree': {
-      markdown = buildMarkdownContent([], undefined, scanResult.treeLines);
+      markdown = buildMarkdownContent(
+        [],
+        request.workspaceRoot,
+        scanResult.treeLines
+      );
       filesCount = scanResult.files.length;
       break;
     }
@@ -135,11 +136,11 @@ import { type ScanResult, scan } from './utils/scanner.js';
         request.type === 'readFilesPaths' ||
         request.type === 'readFilesSelected'
       ) {
-        markdown = buildMarkdownContent(fileResults, request.selectedPath);
+        markdown = buildMarkdownContent(fileResults, request.workspaceRoot);
       } else {
         markdown = buildMarkdownContent(
           fileResults,
-          request.selectedPath,
+          request.workspaceRoot,
           treeLines
         );
       }

@@ -45,7 +45,7 @@ export const scan = async (
     dirMap.set(absPath, { dirs: [], files: [] });
   }
 
-  const treeLines: string[] = [absPath];
+  const treeLines: string[] = [path.relative(absWorkspaceRoot, absPath)];
   const files: string[] = [];
   const visited = new Set<string>([absPath]);
 
@@ -93,7 +93,9 @@ export const scan = async (
       const part1 = isLast ? '    ' : '│   ';
       const fullPath = path.join(frame.dir, entry.name);
 
-      treeLines.push(frame.prefix + part0 + entry.name);
+      treeLines.push(
+        frame.prefix + part0 + path.relative(absWorkspaceRoot, fullPath)
+      );
 
       if (entry.isDir) {
         if (!visited.has(fullPath)) {
