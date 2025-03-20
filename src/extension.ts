@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { copyActiveFileProblems } from './commands/copy-active-file-problems.js';
 import { copyActiveFileMd } from './commands/copy-active-file.js';
 import { copyMdFiles } from './commands/copy-files.js';
 import { copyGitCommits } from './commands/copy-git-commits.js';
@@ -81,6 +82,12 @@ export const activate = async (
     vscode.commands.registerCommand(
       'extension.copyGitCommitsAsMd',
       copyGitCommits(context, outputChannel)
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'extension.copyActiveFileProblems',
+      copyActiveFileProblems(context, outputChannel)
     )
   );
 

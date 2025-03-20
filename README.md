@@ -16,6 +16,7 @@ MarkTree enables you to quickly copy workspace directory structures, file conten
 - **Copy Tabs:** Copies the contents of all currently open file-based tabs as Markdown.
 - **Copy Tabs to the Right:** Copies only the open file-based tabs to the right of the current active tab.
 - **Copy Tabs to the Left:** Copies only the open file-based tabs to the left of the current active tab.
+- **Copy Problems from Active File:** Copies all errors/warnings (diagnostics) for the currently active file as Markdown, including relevant code snippets.
 - **.gitignore Support:** MarkTree can optionally respect your workspace’s `.gitignore` files, so you can copy only the files you want to share (Also allows additional entries via settings).
 - **Binary File Skipping:** MarkTree can optionally skip binary files when copying directory contents.
 - **Copy Staged Git Changes:** MarkTree can gather the staged changes in your repository and copy them as Markdown diffs—perfect for reviewing or sharing partial commits.
@@ -30,6 +31,31 @@ If you frequently work with multiple files at once, MarkTree allows you to copy 
 - **Copy All Tabs:** Copies all open file-based tabs.
 - **Copy Tabs to the Right:** Useful if you want to copy a selection of files opened to the right of the current focus.
 - **Copy Tabs to the Left:** Quickly capture the files you've opened to the left side.
+
+### Copying Problems from the Active File
+
+MarkTree can collect and copy all **diagnostics** (errors, warnings, etc.) for your currently active file—complete with **line numbers**, **messages**, and **code snippet** context.
+
+When you run **Copy Problems from Active File**, you’ll get a Markdown snippet like:
+
+```markdown
+# Problems for /path/to/file.ts
+
+## Issue 1 of 2
+
+- **Severity**: Error
+- **Line**: 12, **Column**: 5
+- **Source**: eslint
+- **Message**: Unexpected token
+- **Code**: 1234
+
+```ts
+// Lines 10-14:
+10  const foo = {
+11    bar: 42
+12    baz: 99 // <-- Missing comma
+13  };
+14
 
 ## Copying Md Tree
 
