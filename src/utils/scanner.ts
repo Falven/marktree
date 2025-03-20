@@ -7,92 +7,89 @@ export type ScanResult = {
   files: string[];
 };
 
-type ScanEntry = {
+type DirContent = {
   dirs: string[];
   files: string[];
 };
 
-export const scan = async (
-  absPath: string,
+export async function scan(
+  selectedPath: string,
   absWorkspaceRoot: string,
   ignoreFiles: string[],
   additionalIgnores: string[]
-): Promise<ScanResult> => {
-  const workspaceName = path.basename(absWorkspaceRoot);
-  const stat = await fs.promises.stat(absPath);
-  const isDirectory = stat.isDirectory();
-  const parentPatterns: string[] = [];
-  await accumulatePatternsUpTo(
-    absWorkspaceRoot,
-    absPath,
-    ignoreFiles,
-    parentPatterns
-  );
-  parentPatterns.push(additionalIgnores.join('\n'));
-  const dirMap = new Map<string, ScanEntry>();
-  if (isDirectory) {
-    await gatherEntries(absPath, parentPatterns, dirMap, ignoreFiles);
-  } else {
-    dirMap.set(absPath, { dirs: [], files: [] });
-  }
-  const topLine = path.join(
-    workspaceName,
-    path.relative(absWorkspaceRoot, absPath)
-  );
-  const treeLines: string[] = [topLine];
-  const files: string[] = [];
-  const visited = new Set<string>([absPath]);
-  const buildEntriesForDir = (
-    dir: string
-  ): Array<{ name: string; isDir: boolean }> => {
-    const entry = dirMap.get(dir);
-    if (!entry) {
-      return [];
+): Promise<ScanResult> {
+  const stats = await fs.promises.stat(selectedPath);
+  const allSelections = [selectedPath];
+  const selectionIsDir = stats.isDirectory();
+
+  if (selectionIsDir) {
+    const subPaths = await gatherAllSubPaths(
+      selectedPath,
+      ignoreFiles,
+      additionalIgnores
+    );
+    for (const p of subPaths) {
+      allSelections.push(p);
     }
-    return [
-      ...entry.dirs.map(d => ({ name: d, isDir: true })),
-      ...entry.files.map(f => ({ name: f, isDir: false })),
-    ];
-  };
+  }
+
+  const includedDirs = new Set<string>();
+  const includedFiles = new Set<string>();
+  for (const sel of allSelections) {
+    const selStat = await fs.promises.stat(sel);
+    if (selStat.isDirectory()) {
+      addAncestors(absWorkspaceRoot, sel, includedDirs);
+      includedDirs.add(sel);
+    } else {
+      addAncestors(absWorkspaceRoot, path.dirname(sel), includedDirs);
+      includedFiles.add(sel);
+    }
+  }
+
+  const treeLines: string[] = [];
+  const files: string[] = [];
+
+  const workspaceName = path.basename(absWorkspaceRoot);
+  treeLines.push(workspaceName);
+
+  const visited = new Set<string>([absWorkspaceRoot]);
+  let dirsCount = includedDirs.has(absWorkspaceRoot) ? 1 : 0;
+  let filesCount = 0;
+
   const stack: Array<{
     dir: string;
-    entries: Array<{ name: string; isDir: boolean }>;
+    children: string[];
     index: number;
     prefix: string;
   }> = [
     {
-      dir: absPath,
-      entries: buildEntriesForDir(absPath),
+      dir: absWorkspaceRoot,
+      children: sortedChildren(absWorkspaceRoot, includedDirs, includedFiles),
       index: 0,
       prefix: '',
     },
   ];
-  let dirsCount = isDirectory ? 1 : 0;
-  let filesCount = 0;
-  if (!isDirectory) {
-    filesCount = 1;
-    files.push(absPath);
-  }
-  while (stack.length > 0) {
+
+  while (stack.length) {
     const frame = stack[stack.length - 1];
-    if (frame && frame.index < frame.entries.length) {
-      const entry = frame.entries[frame.index];
-      const isLast = frame.index === frame.entries.length - 1;
+    if (frame.index < frame.children.length) {
+      const name = frame.children[frame.index];
+      const isLast = frame.index === frame.children.length - 1;
       const part0 = isLast ? '└── ' : '├── ';
       const part1 = isLast ? '    ' : '│   ';
-      const fullPath = path.join(frame.dir, entry.name);
-      const line = path.join(
-        workspaceName,
-        path.relative(absWorkspaceRoot, fullPath)
-      );
-      treeLines.push(frame.prefix + part0 + line);
-      if (entry.isDir) {
+      const fullPath = path.join(frame.dir, name);
+      frame.index++;
+
+      const statHere = await fs.promises.stat(fullPath);
+      treeLines.push(frame.prefix + part0 + name);
+
+      if (statHere.isDirectory()) {
         if (!visited.has(fullPath)) {
           visited.add(fullPath);
           dirsCount++;
           stack.push({
             dir: fullPath,
-            entries: buildEntriesForDir(fullPath),
+            children: sortedChildren(fullPath, includedDirs, includedFiles),
             index: 0,
             prefix: frame.prefix + part1,
           });
@@ -101,126 +98,100 @@ export const scan = async (
         filesCount++;
         files.push(fullPath);
       }
-      frame.index++;
     } else {
       stack.pop();
     }
   }
+
   treeLines.push(`\n${dirsCount} directories, ${filesCount} files`);
   return { treeLines, files };
-};
+}
 
-const accumulatePatternsUpTo = async (
-  absWorkspaceRoot: string,
-  absDirectory: string,
+async function gatherAllSubPaths(
+  rootDir: string,
   ignoreFiles: string[],
-  parentPatterns: string[]
-): Promise<void> => {
-  const relPath = path.relative(absWorkspaceRoot, absDirectory);
-  const segments = relPath ? relPath.split(path.sep) : [];
-  const dirsToCheck = [absWorkspaceRoot];
-  let currentDir = absWorkspaceRoot;
-  for (const segment of segments) {
-    currentDir = path.join(currentDir, segment);
-    dirsToCheck.push(currentDir);
-  }
-  const allResults = await Promise.all(
-    dirsToCheck.map(dir => readIgnoreFiles(dir, ignoreFiles))
-  );
-  for (const contents of allResults) {
-    parentPatterns.push(...contents);
-  }
-};
+  additionalIgnores: string[]
+): Promise<string[]> {
+  const out: string[] = [];
+  const stack = [rootDir];
+  const ig = ignore();
+  ig.add(additionalIgnores.join('\n'));
 
-const readIgnoreFiles = async (
+  while (stack.length) {
+    const dir = stack.pop();
+    if (!dir) {
+      break;
+    }
+
+    const contents = await fs.promises.readdir(dir, { withFileTypes: true });
+    const localPatterns = await readIgnoreFiles(dir, ignoreFiles);
+    const ig2 = ignore().add(localPatterns.join('\n')).add(ig);
+    for (const ent of contents) {
+      const name = ent.name;
+      const rel = ent.isDirectory() ? `${name}/` : name;
+      if (ig2.ignores(rel)) {
+        continue;
+      }
+      const fullPath = path.join(dir, name);
+      if (ent.isDirectory()) {
+        out.push(fullPath);
+        stack.push(fullPath);
+      } else {
+        out.push(fullPath);
+      }
+    }
+  }
+  return out;
+}
+
+function addAncestors(root: string, target: string, set: Set<string>) {
+  const dirs = [];
+  let current = target;
+  while (current.length >= root.length) {
+    dirs.push(current);
+    if (current === root) {
+      break;
+    }
+    current = path.dirname(current);
+    if (current === '.' || current === '/') {
+      break;
+    }
+  }
+  for (const d of dirs) {
+    set.add(d);
+  }
+}
+
+function sortedChildren(
   dir: string,
-  ignoreFiles: string[]
-): Promise<string[]> => {
-  const contents: string[] = [];
+  includedDirs: Set<string>,
+  includedFiles: Set<string>
+): string[] {
+  const entry = fs.readdirSync(dir, { withFileTypes: true });
+  const subDirs = entry
+    .filter(e => e.isDirectory() && includedDirs.has(path.join(dir, e.name)))
+    .map(e => e.name);
+  const subFiles = entry
+    .filter(e => !e.isDirectory() && includedFiles.has(path.join(dir, e.name)))
+    .map(e => e.name);
+  subDirs.sort();
+  subFiles.sort();
+  return [...subDirs, ...subFiles];
+}
+
+async function readIgnoreFiles(
+  dir: string,
+  ignoreFilesArr: string[]
+): Promise<string[]> {
+  const out: string[] = [];
   await Promise.all(
-    ignoreFiles.map(async fileName => {
-      const filePath = path.join(dir, fileName);
+    ignoreFilesArr.map(async file => {
+      const filePath = path.join(dir, file);
       try {
-        const content = await fs.promises.readFile(filePath, 'utf-8');
-        contents.push(content);
+        const data = await fs.promises.readFile(filePath, 'utf-8');
+        out.push(data);
       } catch {}
     })
   );
-  return contents;
-};
-
-const gatherEntries = async (
-  startDir: string,
-  parentPatterns: string[],
-  dirMap: Map<string, ScanEntry>,
-  ignoreFiles: string[]
-): Promise<void> => {
-  type DirFrame = {
-    dir: string;
-    patternLength: number;
-  };
-  const stack: DirFrame[] = [
-    { dir: startDir, patternLength: parentPatterns.length },
-  ];
-  while (stack.length > 0) {
-    const frame = stack.pop();
-    if (!frame) {
-      continue;
-    }
-    const dir = frame.dir;
-    parentPatterns.length = frame.patternLength;
-    const thisDirPatterns = await readIgnoreFiles(dir, ignoreFiles);
-    const oldLength = parentPatterns.length;
-    parentPatterns.push(...thisDirPatterns);
-    const currentIg = ignore();
-    if (parentPatterns.length > 0) {
-      currentIg.add(parentPatterns.join('\n'));
-    }
-    if (!dirMap.has(dir)) {
-      dirMap.set(dir, { dirs: [], files: [] });
-    }
-    let entries: fs.Dirent[];
-    try {
-      entries = await fs.promises.readdir(dir, { withFileTypes: true });
-    } catch {
-      parentPatterns.length = oldLength;
-      continue;
-    }
-    entries.sort((a, b) => {
-      const aIsDir = a.isDirectory() ? 0 : 1;
-      const bIsDir = b.isDirectory() ? 0 : 1;
-      if (aIsDir !== bIsDir) {
-        return aIsDir - bIsDir;
-      }
-      return a.name.localeCompare(b.name);
-    });
-    const parentEntry = dirMap.get(dir);
-    if (!parentEntry) {
-      parentPatterns.length = oldLength;
-      continue;
-    }
-    for (const entry of entries) {
-      const entryName = entry.name;
-      const isDirectory = entry.isDirectory();
-      const relativePath = isDirectory ? `${entryName}/` : entryName;
-      if (currentIg.ignores(relativePath)) {
-        continue;
-      }
-      if (isDirectory) {
-        if (!parentEntry.dirs.includes(entryName)) {
-          parentEntry.dirs.push(entryName);
-        }
-        const fullPath = path.join(dir, entryName);
-        stack.push({
-          dir: fullPath,
-          patternLength: parentPatterns.length,
-        });
-      } else {
-        if (!parentEntry.files.includes(entryName)) {
-          parentEntry.files.push(entryName);
-        }
-      }
-    }
-    parentPatterns.length = oldLength;
-  }
-};
+  return out;
+}

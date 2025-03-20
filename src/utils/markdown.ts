@@ -14,8 +14,8 @@ export function buildMarkdownContent(
       : '';
 
   return fileResults.reduce((markdown, result) => {
-    const relativePath = path.relative(workspaceRoot, result.file);
-    const displayPath = path.join(workspaceName, relativePath);
+    const relPath = path.relative(workspaceRoot, result.file);
+    const displayPath = path.join(workspaceName, relPath);
 
     if (result.isBinary) {
       return `${markdown}${displayPath}\n(Binary file: content not displayed)\n\n`;
