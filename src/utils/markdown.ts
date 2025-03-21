@@ -51,7 +51,7 @@ export function buildDiagnosticsMarkdown(
   document: vscode.TextDocument,
   linesContext = 2
 ): string {
-  let markdown = `# Problems for ${filePath}\n\n`;
+  const lines: string[] = [`# Problems for ${filePath}\n\n`];
 
   diagnostics.forEach((diag, index) => {
     const severityName = vscode.DiagnosticSeverity[diag.severity] ?? 'Unknown';
@@ -66,28 +66,24 @@ export function buildDiagnosticsMarkdown(
       diag.range.end.line + linesContext,
       document.lineCount - 1
     );
-    const snippetRange = new vscode.Range(
-      startLine,
-      0,
-      endLine,
-      document.lineAt(endLine).range.end.character
-    );
-    const snippetText = document.getText(snippetRange);
 
-    markdown += `## Issue ${index + 1} of ${diagnostics.length}\n\n`;
-    markdown += `- **Severity**: ${severityName}\n`;
-    markdown += `- **Line**: ${line}, **Column**: ${col}\n`;
-    markdown += `- **Source**: ${source}\n`;
-    markdown += `- **Message**: ${diag.message}\n`;
+    lines.push(`## Issue ${index + 1} of ${diagnostics.length}\n\n`);
+    lines.push(`- **Severity**: ${severityName}\n`);
+    lines.push(`- **Line**: ${line}, **Column**: ${col}\n`);
+    lines.push(`- **Source**: ${source}\n`);
+    lines.push(`- **Message**: ${diag.message}\n`);
     if (code) {
-      markdown += `- **Code**: \`${code}\`\n`;
+      lines.push(`- **Code**: \`${code}\`\n`);
     }
 
-    markdown += `\n\`\`\`ts\n`;
-    markdown += `// Lines ${startLine + 1}-${endLine + 1}:\n`;
-    markdown += `${snippetText}\n`;
-    markdown += `\`\`\`\n\n`;
+    lines.push(`\n\`\`\`ts\n`);
+    for (let i = startLine; i <= endLine; i++) {
+      const lineNumber = i + 1;
+      const lineText = document.lineAt(i).text;
+      lines.push(`${lineNumber}  ${lineText}\n`);
+    }
+    lines.push(`\`\`\`\n\n`);
   });
 
-  return markdown;
+  return lines.join('');
 }
