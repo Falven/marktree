@@ -1,6 +1,6 @@
-import * as childProcess from 'node:child_process';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import { execSync } from 'node:child_process';
+import { promises } from 'node:fs';
+import { extname } from 'node:path';
 import { parentPort, workerData } from 'node:worker_threads';
 import { type WorkerRequest, WorkerRequestSchema } from './schema.js';
 import {
@@ -114,11 +114,11 @@ import { type ScanResult, scan } from './utils/scanner.js';
       const fileResults = await Promise.all(
         files.map(async filePath => {
           try {
-            const ext = path.extname(filePath).toLowerCase().slice(1);
+            const ext = extname(filePath).toLowerCase().slice(1);
             if (binaryExtensionsSet?.has(ext)) {
               return { file: filePath, content: null, isBinary: true };
             }
-            const content = await fs.promises.readFile(filePath, 'utf-8');
+            const content = await promises.readFile(filePath, 'utf-8');
             return { file: filePath, content };
           } catch (err) {
             if (err instanceof Error) {
@@ -152,7 +152,7 @@ import { type ScanResult, scan } from './utils/scanner.js';
         const displayCmd = `${cmd.command} ${cmd.args.join(' ')}`;
         let output = '';
         try {
-          output = childProcess.execSync(displayCmd, {
+          output = execSync(displayCmd, {
             cwd: cmd.cwd ?? request.workspaceRoot ?? process.cwd(),
             encoding: 'utf-8',
           });

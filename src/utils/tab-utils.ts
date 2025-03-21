@@ -1,14 +1,21 @@
-import * as vscode from 'vscode';
+import {
+  type Tab,
+  type TabGroup,
+  TabInputText,
+  type Uri,
+  window,
+  workspace,
+} from 'vscode';
 
 export async function getFileUrisFromTabs(
   scope: 'all' | 'left' | 'right'
-): Promise<vscode.Uri[]> {
-  const workspaceFolders = vscode.workspace.workspaceFolders;
+): Promise<Uri[]> {
+  const workspaceFolders = workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {
     throw new Error('No workspace folder found.');
   }
 
-  const activeGroup = vscode.window.tabGroups.activeTabGroup;
+  const activeGroup = window.tabGroups.activeTabGroup;
   if (!activeGroup) {
     throw new Error('No active tab group.');
   }
@@ -19,16 +26,16 @@ export async function getFileUrisFromTabs(
   }
 
   const allFileTabs: {
-    tab: vscode.Tab;
-    uri: vscode.Uri;
-    group: vscode.TabGroup;
+    tab: Tab;
+    uri: Uri;
+    group: TabGroup;
     index: number;
   }[] = [];
 
-  for (const group of vscode.window.tabGroups.all) {
+  for (const group of window.tabGroups.all) {
     group.tabs.forEach((tab, index) => {
       const input = tab.input;
-      if (input instanceof vscode.TabInputText && input.uri.scheme === 'file') {
+      if (input instanceof TabInputText && input.uri.scheme === 'file') {
         allFileTabs.push({ tab, uri: input.uri, group, index });
       }
     });
@@ -38,13 +45,13 @@ export async function getFileUrisFromTabs(
     throw new Error('No file-based open tabs.');
   }
 
-  const activeGroupTabs = vscode.window.tabGroups.activeTabGroup.tabs;
+  const activeGroupTabs = window.tabGroups.activeTabGroup.tabs;
   const activeIndex = activeGroupTabs.indexOf(activeTab);
   if (activeIndex === -1) {
     throw new Error('Active tab not found in its group.');
   }
 
-  let filteredUris: vscode.Uri[];
+  let filteredUris: Uri[];
 
   switch (scope) {
     case 'all':

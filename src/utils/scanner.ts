@@ -1,6 +1,6 @@
 import ignore from 'ignore';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import { type Dirent, promises } from 'node:fs';
+import { basename, join, relative, sep } from 'node:path';
 
 export type ScanResult = {
   treeLines: string[];
@@ -13,12 +13,11 @@ export async function scan(
   ignoreFiles: string[],
   additionalIgnores: string[]
 ): Promise<ScanResult> {
-  const relativeParts = path
-    .relative(workspaceRoot, selectedPath)
-    .split(path.sep)
+  const relativeParts = relative(workspaceRoot, selectedPath)
+    .split(sep)
     .filter(Boolean);
 
-  const stat = await fs.promises.stat(selectedPath);
+  const stat = await promises.stat(selectedPath);
   const isFile = !stat.isDirectory();
   const directorySegments = isFile ? relativeParts.slice(0, -1) : relativeParts;
 
@@ -27,7 +26,7 @@ export async function scan(
   let dirCount = 0;
   let fileCount = 0;
 
-  const rootName = path.basename(workspaceRoot);
+  const rootName = basename(workspaceRoot);
   treeLines.push(rootName);
   dirCount++;
 
@@ -44,7 +43,7 @@ export async function scan(
 
   // If user selected a file, add a final line for it
   if (isFile && relativeParts.length > 0) {
-    const fileName = path.basename(selectedPath);
+    const fileName = basename(selectedPath);
     treeLines.push(`    └── ${fileName}`);
     fileCount++;
     foundFiles.push(selectedPath);
@@ -68,22 +67,20 @@ export async function scan(
       .add(parentIgnore)
       .add(localPatterns.join('\n'));
 
-    let entries: fs.Dirent[];
+    let entries: Dirent[];
     try {
-      entries = await fs.promises.readdir(currentDir, { withFileTypes: true });
+      entries = await promises.readdir(currentDir, { withFileTypes: true });
     } catch {
       return;
     }
 
-    // Combine children info and skip ignored
     let children = entries.map(e => {
-      const full = path.join(currentDir, e.name);
-      const rel = path.relative(workspaceRoot, full);
+      const full = join(currentDir, e.name);
+      const rel = relative(workspaceRoot, full);
       return { dirent: e, fullPath: full, relPath: rel };
     });
     children = children.filter(child => !currentIgnore.ignores(child.relPath));
 
-    // Sort: directories first, then files
     children.sort((a, b) => {
       const aDir = a.dirent.isDirectory() ? 0 : 1;
       const bDir = b.dirent.isDirectory() ? 0 : 1;
@@ -93,7 +90,6 @@ export async function scan(
       return a.dirent.name.localeCompare(b.dirent.name);
     });
 
-    // If not unlocked, only follow the subdirectory that matches directorySegments[segmentIndex]
     if (!unlocked && segmentIndex < directorySegments.length) {
       const needed = directorySegments[segmentIndex];
       const match = children.find(
@@ -115,7 +111,6 @@ export async function scan(
       return;
     }
 
-    // Unlocked: show all children
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       const isLast = i === children.length - 1;
@@ -147,9 +142,9 @@ async function readIgnoreFiles(
 ): Promise<string[]> {
   const patterns: string[] = [];
   for (const ignoreFile of ignores) {
-    const full = path.join(dir, ignoreFile);
+    const full = join(dir, ignoreFile);
     try {
-      const data = await fs.promises.readFile(full, 'utf-8');
+      const data = await promises.readFile(full, 'utf-8');
       patterns.push(data);
     } catch {}
   }

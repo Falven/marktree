@@ -26,7 +26,7 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "engines": {
     "vscode": "^1.98.0"
   },

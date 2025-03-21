@@ -1,11 +1,11 @@
 import { Worker } from 'node:worker_threads';
-import type * as vscode from 'vscode';
+import type { ExtensionContext, OutputChannel } from 'vscode';
 import type { WorkerRequest } from '../schema.js';
 
 export const runInWorker = (
   payload: WorkerRequest,
-  context: vscode.ExtensionContext,
-  outputChannel: vscode.OutputChannel
+  context: ExtensionContext,
+  outputChannel: OutputChannel
 ): Promise<number> => {
   const workerPath = context.asAbsolutePath('out/worker.js');
   return new Promise((resolve, reject) => {

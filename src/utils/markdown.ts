@@ -1,5 +1,5 @@
-import * as path from 'node:path';
-import * as vscode from 'vscode';
+import { basename, join, relative } from 'node:path';
+import type { Diagnostic, TextDocument } from 'vscode';
 import type { FileResult } from '../schema.js';
 import { guessLanguageByExtension } from './lang.js';
 
@@ -8,15 +8,15 @@ export function buildMarkdownContent(
   workspaceRoot: string,
   treeLines?: string[]
 ): string {
-  const workspaceName = path.basename(workspaceRoot);
+  const workspaceName = basename(workspaceRoot);
   const initialMarkdown =
     treeLines && treeLines.length > 0
       ? `\`\`\`sh\n${treeLines.join('\n')}\n\`\`\`\n\n`
       : '';
 
   return fileResults.reduce((markdown, result) => {
-    const relPath = path.relative(workspaceRoot, result.file);
-    const displayPath = path.join(workspaceName, relPath);
+    const relPath = relative(workspaceRoot, result.file);
+    const displayPath = join(workspaceName, relPath);
 
     if (result.isBinary) {
       return `${markdown}${displayPath}\n(Binary file: content not displayed)\n\n`;
@@ -47,14 +47,21 @@ export function buildShellExecContent(
 
 export function buildDiagnosticsMarkdown(
   filePath: string,
-  diagnostics: readonly vscode.Diagnostic[],
-  document: vscode.TextDocument,
+  diagnostics: readonly Diagnostic[],
+  document: TextDocument,
   linesContext = 2
 ): string {
+  enum DiagnosticSeverity {
+    Error = 0,
+    Warning = 1,
+    Information = 2,
+    Hint = 3,
+  }
+
   const lines: string[] = [`# Problems for ${filePath}\n\n`];
 
   diagnostics.forEach((diag, index) => {
-    const severityName = vscode.DiagnosticSeverity[diag.severity] ?? 'Unknown';
+    const severityName = DiagnosticSeverity[diag.severity] ?? 'Unknown';
     const line = diag.range.start.line + 1;
     const col = diag.range.start.character + 1;
     const code =

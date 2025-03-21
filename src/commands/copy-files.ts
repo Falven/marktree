@@ -1,5 +1,11 @@
-import * as fs from 'node:fs';
-import * as vscode from 'vscode';
+import { promises } from 'node:fs';
+import {
+  type ExtensionContext,
+  type OutputChannel,
+  type Uri,
+  window,
+  workspace,
+} from 'vscode';
 import {
   DEFAULT_ADDITIONAL_IGNORES,
   DEFAULT_GITIGNORE,
@@ -12,16 +18,16 @@ import { runInWorker } from '../utils/run-in-worker.js';
 import { resolveSelectionUris } from '../utils/uri-resolver.js';
 
 export const copyMdFiles =
-  (context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel) =>
-  async (firstUri?: vscode.Uri, allUris?: vscode.Uri[]) => {
+  (context: ExtensionContext, outputChannel: OutputChannel) =>
+  async (firstUri?: Uri, allUris?: Uri[]) => {
     try {
       const uris = resolveSelectionUris(firstUri, allUris);
       if (uris.length === 0) {
-        vscode.window.showErrorMessage('Please select a folder or file.');
+        window.showErrorMessage('Please select a folder or file.');
         return;
       }
 
-      const config = vscode.workspace.getConfiguration('marktree');
+      const config = workspace.getConfiguration('marktree');
       const showCopyingMsg = config.get<boolean>(
         'showCopyingMessage',
         DEFAULT_SHOW_COPYING_MSG
@@ -29,14 +35,14 @@ export const copyMdFiles =
       let message = 'Copying file contents to clipboard as Markdown.';
       outputChannel.appendLine(message);
       if (showCopyingMsg) {
-        vscode.window.showInformationMessage(message);
+        window.showInformationMessage(message);
       }
 
-      const folder = vscode.workspace.getWorkspaceFolder(uris[0]);
+      const folder = workspace.getWorkspaceFolder(uris[0]);
       if (!folder) {
         const errorMsg = 'No workspace folder found.';
         outputChannel.appendLine(errorMsg);
-        vscode.window.showErrorMessage(errorMsg);
+        window.showErrorMessage(errorMsg);
         return;
       }
 
@@ -66,7 +72,7 @@ export const copyMdFiles =
         );
       } else {
         const singlePath = uris[0].fsPath;
-        const stat = await fs.promises.stat(singlePath);
+        const stat = await promises.stat(singlePath);
         if (stat.isDirectory()) {
           copiedCount = await runInWorker(
             {
@@ -122,19 +128,19 @@ export const copyMdFiles =
           : `${copiedCount} files copied to clipboard as Markdown.`;
       outputChannel.appendLine(message);
       if (showCopiedMsg) {
-        vscode.window.showInformationMessage(message);
+        window.showInformationMessage(message);
       }
     } catch (err) {
       if (err instanceof Error) {
         const errorMessage = err.stack ?? err.message;
         outputChannel.appendLine(errorMessage);
-        vscode.window.showErrorMessage(
+        window.showErrorMessage(
           'Error copying the Markdown file contents. See output for details.'
         );
       } else {
         const errorMessage = String(err);
         outputChannel.appendLine(errorMessage);
-        vscode.window.showErrorMessage(
+        window.showErrorMessage(
           'Error copying the Markdown file contents. See output for details.'
         );
       }
