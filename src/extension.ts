@@ -9,6 +9,7 @@ import { copyActiveFileMd } from './commands/copy-active-file.js';
 import { copyMdFiles } from './commands/copy-files.js';
 import { copyGitCommits } from './commands/copy-git-commits.js';
 import { copyGitDiffStagedAsMd } from './commands/copy-git-diff-staged.js';
+import { copySelected } from './commands/copy-selected.js';
 import { copyTabsToTheLeftAsMd } from './commands/copy-tabs-to-the-left.js';
 import { copyTabsToTheRightAsMd } from './commands/copy-tabs-to-the-right.js';
 import { copyTabsAsMd } from './commands/copy-tabs.js';
@@ -91,6 +92,13 @@ export const activate = async (context: ExtensionContext): Promise<void> => {
     commands.registerCommand(
       'extension.copyActiveFileProblems',
       copyActiveFileProblems(context, outputChannel)
+    )
+  );
+
+  context.subscriptions.push(
+    commands.registerCommand(
+      'extension.copySelected',
+      copySelected(context, outputChannel)
     )
   );
 

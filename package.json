@@ -26,7 +26,7 @@
     "url": "https://github.com/Falven/marktree.git"
   },
   "publisher": "MarkTree",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "engines": {
     "vscode": "^1.98.0"
   },
@@ -208,6 +208,11 @@
       {
         "command": "extension.copyActiveFileProblems",
         "title": "Copy Problems for Active File",
+        "category": "MarkTree"
+      },
+      {
+        "command": "extension.copySelected",
+        "title": "Copy Selected as Markdown",
         "category": "MarkTree"
       }
     ],

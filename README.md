@@ -17,6 +17,7 @@ MarkTree enables you to quickly copy workspace directory structures, file conten
 - **Copy Tabs to the Right:** Copies only the open file-based tabs to the right of the current active tab.
 - **Copy Tabs to the Left:** Copies only the open file-based tabs to the left of the current active tab.
 - **Copy Problems from Active File:** Copies all errors/warnings (diagnostics) for the currently active file as Markdown, including relevant code snippets.
+- **Copy Selected as Markdown:** Copies only the currently selected text in the active editor as a single Markdown code block.
 - **.gitignore Support:** MarkTree can optionally respect your workspace’s `.gitignore` files, so you can copy only the files you want to share (Also allows additional entries via settings).
 - **Binary File Skipping:** MarkTree can optionally skip binary files when copying directory contents.
 - **Copy Staged Git Changes:** MarkTree can gather the staged changes in your repository and copy them as Markdown diffs—perfect for reviewing or sharing partial commits.
@@ -38,7 +39,6 @@ MarkTree can collect and copy all **diagnostics** (errors, warnings, etc.) for y
 
 When you run **Copy Problems from Active File**, you’ll get a Markdown snippet like:
 
-```markdown
 # Problems for /path/to/file.ts
 
 ## Issue 1 of 2
@@ -56,6 +56,7 @@ When you run **Copy Problems from Active File**, you’ll get a Markdown snippet
 12    baz: 99 // <-- Missing comma
 13  };
 14
+```
 
 ## Copying Md Tree
 
